@@ -244,12 +244,70 @@
           </span>
           <span class="demo-progress" aria-hidden="true"></span>
         </button>
+
+        <div class="arp-group" role="group" aria-label="Arpeggiator">
+          <span class="arp-title">
+            Arp
+            <span class="console-note">pattern engine</span>
+          </span>
+
+          <button
+            class="arp-toggle"
+            id="arp-toggle"
+            type="button"
+            aria-pressed="false"
+            aria-label="Arpeggiator off"
+          >
+            <span class="arp-led" aria-hidden="true"></span>
+            <span id="arp-state">Off</span>
+          </button>
+
+          <button
+            class="arp-latch"
+            id="arp-latch"
+            type="button"
+            aria-pressed="false"
+            aria-label="Latch the arpeggiator chord"
+          >
+            Latch
+          </button>
+
+          <span class="arp-label" id="arp-pattern-label">Pattern</span>
+          <div class="arp-choice" role="group" aria-labelledby="arp-pattern-label">
+            <button type="button" data-pattern="up" aria-pressed="true">Up</button>
+            <button type="button" data-pattern="down" aria-pressed="false">Down</button>
+            <button type="button" data-pattern="updown" aria-pressed="false">Up/Down</button>
+            <button type="button" data-pattern="random" aria-pressed="false">Random</button>
+          </div>
+
+          <span class="arp-label" id="arp-rate-label">Rate</span>
+          <div class="arp-choice" role="group" aria-labelledby="arp-rate-label">
+            <button type="button" data-rate="1/4" aria-pressed="false">1/4</button>
+            <button type="button" data-rate="1/8" aria-pressed="true">1/8</button>
+            <button type="button" data-rate="1/16" aria-pressed="false">1/16</button>
+            <button type="button" data-rate="1/8T" aria-pressed="false">1/8T</button>
+          </div>
+
+          <div class="arp-tempo">
+            <label for="tempo">Tempo</label>
+            <input
+              id="tempo"
+              type="range"
+              min="50"
+              max="160"
+              step="1"
+              value="63"
+              aria-label="Tempo in beats per minute"
+            />
+            <output id="tempo-out" for="tempo">63 BPM</output>
+          </div>
+        </div>
       </section>
 
       <section class="keybed-section" aria-label="Keybed">
         <div class="keybed-head">
-          <p class="keybed-hint">Hold a key. Shape the wave.</p>
-          <span class="keybed-meta">A–K · 8 voices · polyphonic</span>
+          <p class="keybed-hint" id="keybed-hint">Hold a key. Shape the wave.</p>
+          <span class="keybed-meta" id="keybed-meta">A–K · 8 voices · polyphonic</span>
         </div>
         <div
           class="keybed"
@@ -285,7 +343,8 @@
         </p>
         <p>
           Eight voices run through a resonant filter, a soft envelope and a
-          ping-pong echo. The analyser is real, so the orb moves with the notes.
+          ping-pong echo. The arp steps through a held chord on the shared
+          tempo, and the analyser is real, so the orb moves with the notes.
           The demo is a live arrangement of the chorus of
           <em>Goodness of God</em>, not a recording.
         </p>
@@ -297,7 +356,8 @@
         </div>
 
         <p class="about-foot">
-          Play with <kbd>A</kbd>–<kbd>K</kbd>, or tap the pads. Use the range
+          Play with <kbd>A</kbd>–<kbd>K</kbd>, or tap the pads. Turn on the arp
+          to step through a held chord; latch keeps it running. Use the range
           sliders to shape the tone. The demo is synthesized live, not a
           recording.
         </p>

@@ -294,19 +294,47 @@ export class SynthEngine {
 
   noteOn(noteIndex: number, velocity = 1): void {
     const ctx = this.context;
-    const bus = this.bus;
-    const delayInput = this.delayInput;
-    if (!ctx || !bus || !delayInput) return;
+    if (!ctx) return;
 
     // One voice per note; retriggering replaces the old tail.
     const existing = this.voices.get(noteIndex);
     if (existing) this.releaseVoice(existing, 0.06);
 
+    const voice = this.createVoice(noteIndex, velocity, ctx.currentTime);
+    if (voice) this.voices.set(noteIndex, voice);
+  }
+
+  /**
+   * Schedule a complete note at an absolute AudioContext time. The arpeggiator
+   * uses this so its timing comes from the audio clock, not from setTimeout.
+   */
+  playScheduled(
+    noteIndex: number,
+    when: number,
+    duration: number,
+    velocity = 1,
+  ): void {
+    const ctx = this.context;
+    if (!ctx) return;
+    const at = Math.max(when, ctx.currentTime + 0.003);
+    this.createVoice(noteIndex, velocity, at, duration);
+  }
+
+  private createVoice(
+    noteIndex: number,
+    velocity: number,
+    at: number,
+    duration?: number,
+  ): Voice | null {
+    const ctx = this.context;
+    const bus = this.bus;
+    const delayInput = this.delayInput;
+    if (!ctx || !bus || !delayInput) return null;
+
     const note = NOTES[noteIndex];
-    if (!note) return;
+    if (!note) return null;
 
     const preset = this.preset;
-    const now = ctx.currentTime;
     const frequency = note.frequency;
 
     const envelope = ctx.createGain();
@@ -338,19 +366,18 @@ export class SynthEngine {
       gain.gain.value = layer.gain;
 
       osc.connect(gain).connect(envelope);
-      osc.start(now);
+      osc.start(at);
       oscillators.push(osc);
     }
 
     const peak = 0.26 * Math.max(0.2, Math.min(1, velocity));
     const sustainPoint = Math.max(0.0001, peak * preset.sustain);
+    const attackEnd = at + preset.attack;
+    const decayEnd = attackEnd + preset.decay;
 
-    envelope.gain.setValueAtTime(0.0001, now);
-    envelope.gain.exponentialRampToValueAtTime(peak, now + preset.attack);
-    envelope.gain.exponentialRampToValueAtTime(
-      sustainPoint,
-      now + preset.attack + preset.decay,
-    );
+    envelope.gain.setValueAtTime(0.0001, at);
+    envelope.gain.exponentialRampToValueAtTime(peak, attackEnd);
+    envelope.gain.exponentialRampToValueAtTime(sustainPoint, decayEnd);
 
     const voice: Voice = {
       note: noteIndex,
@@ -358,7 +385,46 @@ export class SynthEngine {
       oscillators,
       tail: send,
     };
-    this.voices.set(noteIndex, voice);
+
+    if (duration !== undefined) {
+      // Keep arp tails from piling up at fast rates. Direct-play notes still
+      // use the preset's full release.
+      const release = Math.min(
+        preset.release,
+        Math.max(0.15, duration * 0.9),
+      );
+      const gateEnd = at + Math.max(0.04, duration);
+      const amp = envelope.gain;
+
+      try {
+        amp.cancelAndHoldAtTime(gateEnd);
+      } catch {
+        // Older engines cannot hold a future envelope value. Approximate it so
+        // the gate still ends without a jump to the wrong level.
+        let held = sustainPoint;
+        if (gateEnd < attackEnd) {
+          const t = (gateEnd - at) / Math.max(0.0001, preset.attack);
+          held = 0.0001 * Math.pow(peak / 0.0001, t);
+        } else if (gateEnd < decayEnd) {
+          const t = (gateEnd - attackEnd) / Math.max(0.0001, preset.decay);
+          held = peak * Math.pow(sustainPoint / peak, t);
+        }
+        amp.cancelScheduledValues(gateEnd);
+        amp.setValueAtTime(Math.max(0.0001, held), gateEnd);
+      }
+
+      amp.exponentialRampToValueAtTime(0.0001, gateEnd + release);
+      for (const osc of oscillators) {
+        try {
+          osc.stop(gateEnd + release + 0.06);
+        } catch {
+          /* Already stopped. */
+        }
+      }
+      this.attachCleanup(voice);
+    }
+
+    return voice;
   }
 
   noteOff(noteIndex: number, release?: number): void {
@@ -400,13 +466,16 @@ export class SynthEngine {
       }
     }
 
+    this.attachCleanup(voice);
+  }
+
+  private attachCleanup(voice: Voice): void {
     const last = voice.oscillators[voice.oscillators.length - 1];
-    if (last) {
-      last.onended = () => {
-        voice.envelope.disconnect();
-        voice.tail.disconnect();
-      };
-    }
+    if (!last) return;
+    last.onended = () => {
+      voice.envelope.disconnect();
+      voice.tail.disconnect();
+    };
   }
 
   private build(): void {

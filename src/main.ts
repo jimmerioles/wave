@@ -9,6 +9,12 @@ import {
   type PresetKey,
   SynthEngine,
 } from "./audio";
+import {
+  ARP_PATTERN_LABELS,
+  Arpeggiator,
+  type ArpPattern,
+  type ArpRate,
+} from "./arp";
 import { OrbScene } from "./orb";
 import {
   SONG_BASS,
@@ -45,6 +51,19 @@ const muteLabel = must<HTMLElement>("#mute-label");
 const demoButton = must<HTMLButtonElement>("#demo");
 const demoLabel = must<HTMLElement>("#demo-label");
 const demoSub = must<HTMLElement>("#demo-sub");
+const arpToggle = must<HTMLButtonElement>("#arp-toggle");
+const arpState = must<HTMLElement>("#arp-state");
+const arpLatch = must<HTMLButtonElement>("#arp-latch");
+const arpPatternButtons = Array.from(
+  document.querySelectorAll<HTMLButtonElement>("[data-pattern]"),
+);
+const arpRateButtons = Array.from(
+  document.querySelectorAll<HTMLButtonElement>("[data-rate]"),
+);
+const tempoInput = must<HTMLInputElement>("#tempo");
+const tempoOut = must<HTMLOutputElement>("#tempo-out");
+const keybedHint = must<HTMLElement>("#keybed-hint");
+const keybedMeta = must<HTMLElement>("#keybed-meta");
 const presetButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>(".preset"),
 );
@@ -72,6 +91,39 @@ const pads: HTMLButtonElement[] = [];
 const padNotes = NOTES.slice(0, KEYBED_SIZE);
 let lastNote = -1;
 let readoutTimer: number | null = null;
+let arpStepNote = -1;
+let arpStepTimer: number | null = null;
+let arpChord: number[] = [];
+let tempo = 63;
+
+function isUserSource(source: string): boolean {
+  return !source.startsWith("demo:");
+}
+
+/** Notes physically held on the pads or keyboard, in keyboard order. */
+function userHeldNotes(): number[] {
+  const notes = new Set<number>();
+  for (const [source, noteIndex] of activeSources) {
+    if (isUserSource(source)) notes.add(noteIndex);
+  }
+  return [...notes].sort((a, b) => a - b);
+}
+
+/**
+ * The arp's note pool. With latch on, released notes stay in the chord until
+ * a new chord is started; with latch off, it mirrors the physical keys.
+ */
+function arpPoolNotes(): number[] {
+  return arp.latch ? arpChord : userHeldNotes();
+}
+
+function userSourceCount(): number {
+  let count = 0;
+  for (const source of activeSources.keys()) {
+    if (isUserSource(source)) count++;
+  }
+  return count;
+}
 
 function buildKeybed(): void {
   padNotes.forEach((note, index) => {
@@ -149,7 +201,7 @@ function buildKeybed(): void {
 function syncPlayingState(): void {
   document.body.classList.toggle(
     "is-playing",
-    activeSources.size > 0 || demoPlaying || eggPlaying,
+    activeSources.size > 0 || demoPlaying || eggPlaying || arp.isPlaying,
   );
 }
 
@@ -179,7 +231,7 @@ function setReadout(noteIndex: number): void {
 function resetReadoutSoon(): void {
   if (readoutTimer !== null) clearTimeout(readoutTimer);
   readoutTimer = window.setTimeout(() => {
-    if (activeSources.size > 0) return;
+    if (activeSources.size > 0 || arp.isPlaying) return;
     noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
     noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
     noteReadout.classList.remove("is-live");
@@ -192,10 +244,21 @@ function press(noteIndex: number, source: string, velocity = 1): void {
   if (!note) return;
 
   engine.ensure();
+  const user = isUserSource(source);
+
+  // Latch builds a chord that survives key-up. A press with nothing else
+  // held starts a new chord.
+  if (user && arp.enabled && arp.latch) {
+    if (userSourceCount() === 0) arpChord = [];
+    if (!arpChord.includes(noteIndex)) {
+      arpChord = [...arpChord, noteIndex].sort((a, b) => a - b);
+    }
+  }
+
   activeSources.set(source, noteIndex);
   noteCounts[noteIndex] = (noteCounts[noteIndex] ?? 0) + 1;
 
-  if (noteCounts[noteIndex] === 1) {
+  if (noteCounts[noteIndex] === 1 && !(user && arp.enabled)) {
     engine.noteOn(noteIndex, velocity);
     orb.burst(noteIndex);
   }
@@ -203,6 +266,12 @@ function press(noteIndex: number, source: string, velocity = 1): void {
   lastNote = noteIndex;
   setPadState(noteIndex, true);
   setReadout(noteIndex);
+
+  if (user) {
+    arp.refresh();
+    syncArpPads();
+  }
+
   syncPlayingState();
 }
 
@@ -210,16 +279,25 @@ function release(source: string, releaseSeconds?: number): void {
   const noteIndex = activeSources.get(source);
   if (noteIndex === undefined) return;
 
+  const user = isUserSource(source);
+
   activeSources.delete(source);
   noteCounts[noteIndex] = Math.max(0, (noteCounts[noteIndex] ?? 1) - 1);
 
   if (noteCounts[noteIndex] === 0) {
-    engine.noteOff(noteIndex, releaseSeconds);
+    if (!(user && arp.enabled)) {
+      engine.noteOff(noteIndex, releaseSeconds);
+    }
     setPadState(noteIndex, false);
   }
 
+  if (user) {
+    arp.refresh();
+    syncArpPads();
+  }
+
   if (activeSources.size === 0) {
-    resetReadoutSoon();
+    if (!arp.isPlaying) resetReadoutSoon();
   } else {
     const remaining = [...activeSources.values()][activeSources.size - 1];
     if (remaining !== undefined) setReadout(remaining);
@@ -231,6 +309,9 @@ function release(source: string, releaseSeconds?: number): void {
 function releaseAll(): void {
   for (const source of [...activeSources.keys()]) release(source);
   heldKeys.clear();
+  arpChord = [];
+  arp.stop();
+  syncArpPads();
 }
 
 buildKeybed();
@@ -247,6 +328,180 @@ const orb = new OrbScene(canvas, engine, (level, rms) => {
     meterValue.textContent = `${db > 0 ? "+" : ""}${db} dB`;
   }
 });
+
+/* -------------------------------------------------------------------------
+   Arpeggiator
+   ------------------------------------------------------------------------- */
+
+const arp = new Arpeggiator(
+  engine,
+  arpPoolNotes,
+  () => tempo,
+  showArpStep,
+  clearArpStep,
+);
+
+function showArpStep(noteIndex: number, durationMs: number): void {
+  if (!arp.enabled) return;
+
+  if (arpStepTimer !== null) {
+    clearTimeout(arpStepTimer);
+    arpStepTimer = null;
+  }
+  for (const pad of pads) pad.classList.remove("is-arp-step");
+
+  arpStepNote = noteIndex;
+  pads[noteIndex]?.classList.add("is-arp-step");
+
+  lastNote = noteIndex;
+  noteReadout.textContent = NOTES[noteIndex]?.name ?? "—";
+  noteSub.textContent = `arp · ${ARP_PATTERN_LABELS[arp.pattern]}`;
+  noteReadout.classList.add("is-live");
+  orb.burst(noteIndex);
+
+  arpStepTimer = window.setTimeout(() => {
+    if (arpStepNote !== noteIndex) return;
+    pads[noteIndex]?.classList.remove("is-arp-step");
+    arpStepNote = -1;
+    arpStepTimer = null;
+  }, Math.max(90, durationMs * 0.82));
+}
+
+function clearArpStep(): void {
+  if (arpStepTimer !== null) {
+    clearTimeout(arpStepTimer);
+    arpStepTimer = null;
+  }
+  for (const pad of pads) pad.classList.remove("is-arp-step");
+  arpStepNote = -1;
+
+  if (activeSources.size > 0) {
+    const remaining = [...activeSources.values()][activeSources.size - 1];
+    if (remaining !== undefined) setReadout(remaining);
+    syncPlayingState();
+    return;
+  }
+
+  noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+  noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
+  noteReadout.classList.remove("is-live");
+  syncPlayingState();
+}
+
+function syncArpPads(): void {
+  const latched = new Set(arp.latch ? arpChord : []);
+  for (const [index, pad] of pads.entries()) {
+    pad.classList.toggle(
+      "is-latched",
+      arp.enabled && arp.latch && latched.has(index),
+    );
+  }
+}
+
+function updateArpMeta(): void {
+  document.body.classList.toggle("is-arp", arp.enabled);
+
+  keybedMeta.textContent = arp.enabled
+    ? `Arp · ${ARP_PATTERN_LABELS[arp.pattern]} · ${arp.rate} · ${tempo} BPM${
+        arp.latch ? " · latch" : ""
+      }`
+    : "A–K · 8 voices · polyphonic";
+
+  keybedHint.textContent = arp.enabled
+    ? arp.latch
+      ? "Hold a chord. Latch it. Let it run."
+      : "Hold a chord. Let it run."
+    : "Hold a key. Shape the wave.";
+}
+
+function syncArpUi(): void {
+  arpToggle.setAttribute("aria-pressed", String(arp.enabled));
+  arpToggle.setAttribute(
+    "aria-label",
+    `Arpeggiator ${arp.enabled ? "on" : "off"}`,
+  );
+  arpState.textContent = arp.enabled ? "On" : "Off";
+  arpLatch.setAttribute("aria-pressed", String(arp.latch));
+
+  for (const button of arpPatternButtons) {
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.pattern === arp.pattern),
+    );
+  }
+  for (const button of arpRateButtons) {
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.rate === arp.rate),
+    );
+  }
+
+  updateArpMeta();
+  syncArpPads();
+}
+
+function setArpEnabled(enabled: boolean, resumeHeld = true): void {
+  if (arp.enabled === enabled) {
+    syncArpUi();
+    return;
+  }
+
+  if (enabled) {
+    if (demoPlaying) stopDemo();
+    if (eggPlaying) stopEgg();
+
+    for (const noteIndex of userHeldNotes()) engine.noteOff(noteIndex, 0.06);
+    arpChord = arp.latch ? userHeldNotes() : [];
+    arp.setEnabled(true);
+  } else {
+    arp.setEnabled(false);
+    arpChord = [];
+
+    if (resumeHeld) {
+      const held = userHeldNotes();
+      for (const noteIndex of held) {
+        if ((noteCounts[noteIndex] ?? 0) > 0) {
+          engine.noteOn(noteIndex, 1);
+          orb.burst(noteIndex);
+        }
+      }
+      if (held.length > 0) setReadout(held[held.length - 1]);
+    }
+  }
+
+  syncArpUi();
+  syncPlayingState();
+}
+
+arpToggle.addEventListener("click", () => setArpEnabled(!arp.enabled));
+
+arpLatch.addEventListener("click", () => {
+  const next = !arp.latch;
+  if (next) {
+    arpChord = userHeldNotes();
+  } else {
+    arpChord = [];
+  }
+  arp.setLatch(next);
+  syncArpUi();
+  syncPlayingState();
+});
+
+for (const button of arpPatternButtons) {
+  button.addEventListener("click", () => {
+    const pattern = button.dataset.pattern as ArpPattern;
+    arp.setPattern(pattern);
+    syncArpUi();
+  });
+}
+
+for (const button of arpRateButtons) {
+  button.addEventListener("click", () => {
+    const rate = button.dataset.rate as ArpRate;
+    arp.setRate(rate);
+    syncArpUi();
+  });
+}
 
 /* -------------------------------------------------------------------------
    Presets and controls
@@ -277,6 +532,16 @@ function syncEcho(): void {
   delayOut.textContent = `${value}%`;
   delay.setAttribute("aria-valuetext", `${value} percent echo`);
   paintRange(delay);
+}
+
+function syncTempo(): void {
+  tempo = Number(tempoInput.value);
+  tempoOut.textContent = `${tempo} BPM`;
+  tempoInput.setAttribute("aria-valuetext", `${tempo} beats per minute`);
+  paintRange(tempoInput);
+
+  if (!demoPlaying && !eggPlaying) demoSub.textContent = demoSubText();
+  updateArpMeta();
 }
 
 function applyPreset(key: PresetKey, syncControls = true): void {
@@ -315,18 +580,16 @@ for (const button of presetButtons) {
 
 cutoff.addEventListener("input", syncCutoff);
 delay.addEventListener("input", syncEcho);
+tempoInput.addEventListener("input", syncTempo);
 
 /* -------------------------------------------------------------------------
    Demo: the chorus of "Goodness of God"
 
    A fixed, hand-arranged excerpt. The melody is written in C so it fits the
    C-major keybed; the two top notes (D4/E4) are demo-only. Bass roots sit
-   under the melody to imply the F – C – G – Am progression. 4/4 at 63 BPM,
-   one intro bar then eight chorus bars.
+   under the melody to imply the F – C – G – Am progression. 4/4, one intro
+   bar then eight chorus bars. The default tempo is 63 BPM.
    ------------------------------------------------------------------------- */
-
-const DEMO_BPM = 63;
-const BEAT_MS = 60000 / DEMO_BPM;
 
 const N = {
   C3: 0,
@@ -407,9 +670,20 @@ const DEMO_NOTES: readonly DemoEvent[] = [
 ];
 
 const DEMO_BEATS = 36;
-const DEMO_LENGTH = DEMO_BEATS * BEAT_MS;
 /** A shorter release keeps the demo melody legible against the pad presets. */
 const DEMO_RELEASE = 0.38;
+
+function demoBeatMs(): number {
+  return 60000 / tempo;
+}
+
+function demoDurationMs(): number {
+  return DEMO_BEATS * demoBeatMs();
+}
+
+function demoSubText(): string {
+  return `Goodness of God · ${Math.round(demoDurationMs() / 1000)}s`;
+}
 
 let demoTimers: number[] = [];
 let demoPlaying = false;
@@ -423,15 +697,17 @@ function setDemoUi(playing: boolean): void {
     playing ? "Stop the demo" : "Play the chorus of Goodness of God",
   );
   demoLabel.textContent = playing ? "Stop demo" : "Play the chorus";
-  demoSub.textContent = playing
-    ? "Goodness of God · chorus"
-    : "Goodness of God · 34s";
+  demoSub.textContent = playing ? "Goodness of God · chorus" : demoSubText();
   syncPlayingState();
 }
 
 function startDemo(): void {
   if (eggPlaying) stopEgg();
+  if (arp.enabled) setArpEnabled(false, false);
   engine.ensure();
+
+  const beatMs = demoBeatMs();
+  const totalMs = DEMO_BEATS * beatMs;
 
   // Reset the progress bar so each run starts from the left.
   demoButton.classList.remove("is-playing");
@@ -440,7 +716,7 @@ function startDemo(): void {
   demoRun++;
   const run = demoRun;
   demoPlaying = true;
-  demoButton.style.setProperty("--demo-ms", `${DEMO_LENGTH}ms`);
+  demoButton.style.setProperty("--demo-ms", `${totalMs}ms`);
   setDemoUi(true);
 
   // Bass first on shared downbeats so the readout features the melody.
@@ -454,13 +730,13 @@ function startDemo(): void {
       window.setTimeout(() => {
         if (!demoPlaying || run !== demoRun) return;
         press(noteIndex, source, velocity ?? 0.72);
-      }, start * BEAT_MS + 40),
+      }, start * beatMs + 40),
     );
 
     demoTimers.push(
       window.setTimeout(
         () => release(source, DEMO_RELEASE),
-        (start + length) * BEAT_MS + 40,
+        (start + length) * beatMs + 40,
       ),
     );
   });
@@ -468,7 +744,7 @@ function startDemo(): void {
   demoTimers.push(
     window.setTimeout(() => {
       if (run === demoRun) stopDemo();
-    }, DEMO_LENGTH + 1500),
+    }, totalMs + 1500),
   );
 }
 
@@ -577,6 +853,7 @@ function startEgg(): void {
   const destination = engine.analyser;
   if (!ctx || !destination) return;
 
+  if (arp.enabled) setArpEnabled(false, false);
   if (demoPlaying) stopDemo();
 
   eggRun++;
@@ -927,6 +1204,12 @@ window.addEventListener("keydown", (event) => {
       stopDemo();
       return;
     }
+    if (arp.isPlaying) {
+      arpChord = [];
+      arp.stop();
+      syncArpPads();
+      return;
+    }
   }
 
   if (event.metaKey || event.ctrlKey || event.altKey) {
@@ -1034,3 +1317,5 @@ document.addEventListener("visibilitychange", () => {
 noteReadout.textContent = "—";
 noteSub.textContent = "hold a key";
 applyPreset("bloom");
+syncTempo();
+syncArpUi();
