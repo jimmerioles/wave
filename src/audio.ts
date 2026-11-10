@@ -539,7 +539,7 @@ export class RickrollAudio {
     this.ctx = ctx;
 
     const master = ctx.createGain();
-    master.gain.value = 0.75;
+    master.gain.value = 1.3;
     const compressor = ctx.createDynamicsCompressor();
     compressor.threshold.value = -14;
     compressor.knee.value = 10;

@@ -541,7 +541,11 @@ let eggRun = 0;
 let eggToastTimer: number | null = null;
 let eggAudio: RickrollAudio | null = null;
 
-function setEggToast(text: string, visible: boolean): void {
+function setEggToast(
+  text: string,
+  visible: boolean,
+  duration = 3200,
+): void {
   eggToast.textContent = text;
   eggToast.classList.toggle("is-visible", visible);
 
@@ -554,7 +558,7 @@ function setEggToast(text: string, visible: boolean): void {
     eggToastTimer = window.setTimeout(() => {
       eggToast.classList.remove("is-visible");
       eggToastTimer = null;
-    }, 3200);
+    }, duration);
   }
 }
 
@@ -585,8 +589,9 @@ function startEgg(): void {
   stagePreset.dataset.preset = "glass";
   document.body.dataset.preset = "glass";
   setEggToast(
-    muted ? "you just got wave-rolled (silently)" : "you just got wave-rolled",
+    muted ? "sound is off — tap the speaker" : "you just got wave-rolled",
     true,
+    muted ? 6000 : 3200,
   );
   noteReadout.textContent = "♪";
   noteSub.textContent = "never gonna";
@@ -609,76 +614,140 @@ function startEgg(): void {
   const beatSec = 60 / EGG_BPM;
   const midiHz = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
 
+  type EggEvent = { at: number; play: () => void };
+  const eggEvents: EggEvent[] = [];
+  const introBoost = (at: number) => (at < 35 ? 1.35 : 1);
+
   for (const [at, midi, length, velocity] of SONG_LEAD) {
-    audio.playLead(
-      midiHz(midi),
-      startAt + at * beatSec,
-      length * beatSec,
-      velocity,
-    );
+    eggEvents.push({
+      at,
+      play: () =>
+        audio.playLead(
+          midiHz(midi),
+          startAt + at * beatSec,
+          length * beatSec,
+          velocity,
+        ),
+    });
   }
 
   for (const [at, midi, length, velocity] of SONG_BASS) {
-    audio.playBass(midi, startAt + at * beatSec, length * beatSec, velocity);
+    eggEvents.push({
+      at,
+      play: () =>
+        audio.playBass(
+          midi,
+          startAt + at * beatSec,
+          length * beatSec,
+          Math.min(1, velocity * introBoost(at)),
+        ),
+    });
   }
 
   for (const [at, midis, length, velocity] of SONG_PIANO) {
-    audio.playPiano(
-      midis,
-      startAt + at * beatSec,
-      length * beatSec,
-      velocity * 0.65,
-    );
+    eggEvents.push({
+      at,
+      play: () =>
+        audio.playPiano(
+          midis,
+          startAt + at * beatSec,
+          length * beatSec,
+          Math.min(1, velocity * 0.65 * introBoost(at)),
+        ),
+    });
   }
 
   for (const [at, midi, length, velocity] of SONG_STRINGS) {
-    const time = startAt + at * beatSec;
-    if (at < 35) {
-      // The intro's high string line is the lead before the vocal enters.
-      // Drop it an octave so it reads as a synth line rather than a whistle.
-      audio.playLead(
-        midiHz(midi - 12),
-        time,
-        length * beatSec,
-        velocity * 0.55,
-      );
-    } else {
-      audio.playChord([midi], time, length * beatSec, velocity * 0.35);
-    }
+    const boost = introBoost(at);
+    eggEvents.push({
+      at,
+      play: () => {
+        const time = startAt + at * beatSec;
+        if (at < 35) {
+          // The intro's high string line is the lead before the vocal enters.
+          // Drop it an octave so it reads as a synth line, not a whistle.
+          audio.playLead(
+            midiHz(midi - 12),
+            time,
+            length * beatSec,
+            Math.min(1, velocity * 0.55 * boost),
+          );
+        } else {
+          audio.playChord(
+            [midi],
+            time,
+            length * beatSec,
+            Math.min(1, velocity * 0.35 * boost),
+          );
+        }
+      },
+    });
   }
 
   for (const [at, midi, length, velocity] of SONG_HORN) {
-    audio.playChord(
-      [midi],
-      startAt + at * beatSec,
-      length * beatSec,
-      velocity * (at < 35 ? 0.5 : 0.25),
-    );
+    const boost = introBoost(at);
+    eggEvents.push({
+      at,
+      play: () =>
+        audio.playChord(
+          [midi],
+          startAt + at * beatSec,
+          length * beatSec,
+          Math.min(1, velocity * (at < 35 ? 0.5 : 0.25) * boost),
+        ),
+    });
   }
 
   for (const [at, kind, frequency, velocity] of SONG_DRUMS) {
-    const time = startAt + at * beatSec;
-    switch (kind) {
-      case "kick":
-        audio.kick(time, velocity);
-        break;
-      case "snare":
-        audio.snare(time, velocity);
-        break;
-      case "hat":
-        audio.hat(time, velocity * 0.85);
-        break;
-      case "openhat":
-        audio.hat(time, velocity * 0.85, true);
-        break;
-      case "tom":
-        audio.tom(time, frequency, velocity);
-        break;
-      case "crash":
-        audio.crash(time, velocity);
-        break;
-    }
+    const boost = introBoost(at);
+    eggEvents.push({
+      at,
+      play: () => {
+        const time = startAt + at * beatSec;
+        const v = Math.min(1, velocity * boost);
+        switch (kind) {
+          case "kick":
+            audio.kick(time, v);
+            break;
+          case "snare":
+            audio.snare(time, v);
+            break;
+          case "hat":
+            audio.hat(time, v * 0.85);
+            break;
+          case "openhat":
+            audio.hat(time, v * 0.85, true);
+            break;
+          case "tom":
+            audio.tom(time, frequency, v);
+            break;
+          case "crash":
+            audio.crash(time, v);
+            break;
+        }
+      },
+    });
   }
+
+  // Schedule only a two-second lookahead so a 1:22 arrangement does not create
+  // every oscillator at once. This keeps mobile audio graphs healthy.
+  eggEvents.sort((a, b) => a.at - b.at);
+  let nextEggEvent = 0;
+  const scheduleEggWindow = (): void => {
+    const horizon = ctx.currentTime - startAt + 2;
+    while (
+      nextEggEvent < eggEvents.length &&
+      eggEvents[nextEggEvent].at * beatSec <= horizon
+    ) {
+      eggEvents[nextEggEvent].play();
+      nextEggEvent++;
+    }
+
+    if (nextEggEvent < eggEvents.length && eggPlaying) {
+      eggTimers.push(window.setTimeout(scheduleEggWindow, 250));
+    }
+  };
+  scheduleEggWindow();
 
   const keybedOffsets = [0, 2, 4, 5, 7, 9, 11, 12];
   for (const [at, midi, length] of SONG_LEAD) {
