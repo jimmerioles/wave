@@ -50,11 +50,11 @@ The master output is intentionally low (0.2) and compressed.
 ## Easter egg
 
 Triple-tap the wave mark, or enter the Konami code
-(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A 20-second, 118 BPM synth-pop
-arrangement of the full “Never Gonna Give You Up” chorus plays — bright lead,
-syncopated synth bass, drum machine and the chord bed — then the stage returns
-to the current preset. If sound is off, the gag is visual-only. `Esc` stops it.
-The About dialog has a small hint.
+(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A 31-second, 118 BPM synth-pop
+edit plays — the tom-fill intro, four bars of the groove, then the full chorus
+with bright lead, syncopated synth bass, drum machine and chord bed — and the
+stage then returns to the current preset. If sound is off, the gag is
+visual-only. `Esc` stops it. The About dialog has a small hint.
 
 ## What is implemented
 
@@ -86,9 +86,10 @@ The About dialog has a small hint.
   (D4/E4) internally for the chorus lift; they have no pads.
 
 **Easter egg**
-- A hidden 20-second synth-pop arrangement of the full “Never Gonna Give You
-  Up” chorus at 118 BPM: bright detuned lead, syncopated synth bass, drum
-  machine and a chord pad, all synthesized at runtime.
+- A hidden 31-second synth-pop edit of “Never Gonna Give You Up” at 118 BPM:
+  the tom-fill intro, four bars of the groove, then the full chorus with a
+  bright detuned lead, syncopated synth bass, drum machine and chord pad, all
+  synthesized at runtime.
 - Triggered by triple-tapping the brand mark or the Konami code. It stops the
   main demo, restores the stage, respects mute and reduced motion, and stops
   on `Esc`.

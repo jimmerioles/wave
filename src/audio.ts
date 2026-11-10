@@ -816,6 +816,21 @@ export class RickrollAudio {
     this.sources.push(click);
   }
 
+  tom(at: number, frequency: number, velocity = 0.8): void {
+    const osc = this.ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(frequency * 1.35, at);
+    osc.frequency.exponentialRampToValueAtTime(frequency, at + 0.08);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(0.45 * velocity, at + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.28);
+    osc.connect(gain).connect(this.drumBus);
+    osc.start(at);
+    osc.stop(at + 0.3);
+    this.sources.push(osc);
+  }
+
   snare(at: number, velocity = 1): void {
     const noise = this.noiseSource();
     const bandpass = this.ctx.createBiquadFilter();

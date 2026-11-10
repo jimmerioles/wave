@@ -518,7 +518,10 @@ muteButton.addEventListener("click", () => {
 
 const EGG_BPM = 118;
 const EGG_BEAT_MS = 60000 / EGG_BPM;
-const EGG_BEATS = 40;
+/** Tom fill (2.5) + four intro bars (16) + the second fill (2.5). */
+const EGG_INTRO_BEATS = 21;
+const EGG_CHORUS_BEATS = 40;
+const EGG_BEATS = EGG_INTRO_BEATS + EGG_CHORUS_BEATS;
 const EGG_BARS = 10;
 const EGG_LENGTH = EGG_BEATS * EGG_BEAT_MS;
 /** Milliseconds between the trigger and the first sample. */
@@ -714,6 +717,70 @@ const EGG_CHORDS: readonly EggChord[] = [
   [36, [57, 60, 64, 67], 4],
 ];
 
+/** Four bars of the intro groove, relative to the first kick at beat 2.5. */
+const EGG_INTRO_BASS: readonly EggBass[] = [
+  [0, BASS_MIDI.G1, 0.23],
+  [0.5, BASS_MIDI.G1, 0.23],
+  [0.75, BASS_MIDI.G1, 0.23],
+  [1.25, BASS_MIDI.E2, 0.23],
+  [1.5, BASS_MIDI.D2, 0.23],
+  [2, BASS_MIDI.C2, 0.5],
+  [2.5, BASS_MIDI.C2, 0.23],
+  [3.5, BASS_MIDI.A1, 0.23],
+  [3.75, BASS_MIDI.C2, 0.23],
+  [4, BASS_MIDI.A1, 0.23],
+  [4.5, BASS_MIDI.A1, 0.23],
+  [4.75, BASS_MIDI.A1, 0.23],
+  [5.25, BASS_MIDI.E2, 0.23],
+  [5.5, BASS_MIDI.D2, 0.23],
+  [6.5, BASS_MIDI.D2, 0.23],
+  [6.75, BASS_MIDI.D2, 0.23],
+  [7, BASS_MIDI.D2, 0.23],
+  [7.25, BASS_MIDI.E2, 0.23],
+  [7.75, BASS_MIDI.D2, 0.23],
+  [8, BASS_MIDI.G1, 0.23],
+  [8.5, BASS_MIDI.G1, 0.23],
+  [8.75, BASS_MIDI.G1, 0.23],
+  [9.25, BASS_MIDI.E2, 0.23],
+  [9.5, BASS_MIDI.D2, 0.23],
+  [10, BASS_MIDI.C2, 0.5],
+  [10.5, BASS_MIDI.C2, 0.23],
+  [11.5, BASS_MIDI.C2, 0.23],
+  [11.75, BASS_MIDI.C2, 0.23],
+  [12, BASS_MIDI.A1, 0.23],
+  [12.5, BASS_MIDI.A1, 0.23],
+  [12.75, BASS_MIDI.A1, 0.23],
+  [13.25, BASS_MIDI.E2, 0.23],
+  [13.5, BASS_MIDI.D2, 0.23],
+  [14.5, BASS_MIDI.C2, 0.23],
+  [15, BASS_MIDI.C2, 0.23],
+  [15.25, BASS_MIDI.C2, 0.23],
+  [15.75, BASS_MIDI.F2, 0.23],
+];
+
+const EGG_INTRO_CHORDS: readonly EggChord[] = [
+  [0, [62, 65, 69], 1.5],
+  [1.5, [60, 64, 67], 2.5],
+  [4, [60, 64, 67], 1.5],
+  [5.5, [62, 65, 69], 2.5],
+  [8, [62, 65, 69], 1.5],
+  [9.5, [60, 64, 67], 2.5],
+  [12, [60, 64, 67], 1.5],
+  [13.5, [62, 65, 69], 2.5],
+];
+
+const TOM_FILL: readonly (readonly [number, number, number])[] = [
+  [0, 220, 0.9],
+  [0.25, 220, 0.85],
+  [0.75, 220, 0.9],
+  [1, 220, 0.85],
+  [1.25, 160, 0.9],
+  [1.5, 160, 0.9],
+  [1.75, 160, 0.85],
+  [2, 110, 0.9],
+  [2.25, 110, 0.8],
+];
+
 let eggTimers: number[] = [];
 let eggPlaying = false;
 let eggRun = 0;
@@ -776,49 +843,85 @@ function startEgg(): void {
   eggAudio = audio;
   const startAt = ctx.currentTime + EGG_START_DELAY / 1000;
   const beatSec = 60 / EGG_BPM;
+  const introAt = startAt;
+  const chorusAt = startAt + EGG_INTRO_BEATS * beatSec;
 
+  const scheduleGroove = (baseAt: number, startBeat: number, bars: number) => {
+    for (let bar = 0; bar < bars; bar++) {
+      const b = startBeat + bar * 4;
+      audio.kick(baseAt + b * beatSec, 0.95);
+      audio.kick(baseAt + (b + 2) * beatSec, 0.9);
+      audio.snare(baseAt + (b + 1) * beatSec, 0.85);
+      audio.snare(baseAt + (b + 3) * beatSec, 0.85);
+
+      for (let i = 0; i < 4; i++) {
+        audio.hat(baseAt + (b + i) * beatSec, i === 0 ? 0.8 : 0.65);
+      }
+      audio.hat(baseAt + (b + 0.5) * beatSec, 0.6, true);
+      audio.hat(baseAt + (b + 1.5) * beatSec, 0.5);
+      audio.hat(baseAt + (b + 1.75) * beatSec, 0.4);
+      audio.hat(baseAt + (b + 2.5) * beatSec, 0.65, true);
+      audio.hat(baseAt + (b + 3.5) * beatSec, 0.6, true);
+    }
+  };
+
+  // Intro: the famous tom fill, four bars of the groove, then the fill again.
+  for (const [beat, frequency, velocity] of TOM_FILL) {
+    audio.tom(introAt + beat * beatSec, frequency, velocity);
+  }
+  scheduleGroove(introAt, 2.5, 4);
+  audio.crash(introAt + 2.5 * beatSec, 0.7);
+
+  for (const [beat, midi, length] of EGG_INTRO_BASS) {
+    audio.playBass(
+      midi,
+      introAt + (2.5 + beat) * beatSec,
+      length * beatSec,
+      0.95,
+    );
+  }
+
+  for (const [beat, midis, length] of EGG_INTRO_CHORDS) {
+    audio.playChord(
+      midis,
+      introAt + (2.5 + beat) * beatSec,
+      length * beatSec,
+      0.55,
+    );
+  }
+
+  for (const [beat, frequency, velocity] of TOM_FILL) {
+    audio.tom(introAt + (18.5 + beat) * beatSec, frequency, velocity);
+  }
+
+  // Chorus: lead, bass, chords and the ten-bar groove.
   for (const [beat, noteIndex, length] of EGG_LEAD) {
     const note = NOTES[noteIndex];
     if (!note) continue;
     audio.playLead(
       note.frequency,
-      startAt + beat * beatSec,
+      chorusAt + beat * beatSec,
       length * beatSec,
       0.9,
     );
   }
 
   for (const [beat, midi, length] of EGG_BASS) {
-    audio.playBass(midi, startAt + beat * beatSec, length * beatSec, 0.95);
+    audio.playBass(midi, chorusAt + beat * beatSec, length * beatSec, 0.95);
   }
 
   for (const [beat, midis, length] of EGG_CHORDS) {
-    audio.playChord(midis, startAt + beat * beatSec, length * beatSec, 0.55);
+    audio.playChord(midis, chorusAt + beat * beatSec, length * beatSec, 0.55);
   }
 
-  for (let bar = 0; bar < EGG_BARS; bar++) {
-    const b = bar * 4;
-    audio.kick(startAt + b * beatSec, 0.95);
-    audio.kick(startAt + (b + 2) * beatSec, 0.9);
-    audio.snare(startAt + (b + 1) * beatSec, 0.85);
-    audio.snare(startAt + (b + 3) * beatSec, 0.85);
+  scheduleGroove(chorusAt, 0, EGG_BARS);
 
-    for (let i = 0; i < 4; i++) {
-      audio.hat(startAt + (b + i) * beatSec, i === 0 ? 0.8 : 0.65);
-    }
-    audio.hat(startAt + (b + 0.5) * beatSec, 0.6, true);
-    audio.hat(startAt + (b + 1.5) * beatSec, 0.5);
-    audio.hat(startAt + (b + 1.75) * beatSec, 0.4);
-    audio.hat(startAt + (b + 2.5) * beatSec, 0.65, true);
-    audio.hat(startAt + (b + 3.5) * beatSec, 0.6, true);
-  }
-
-  audio.crash(startAt, 0.9);
-  audio.crash(startAt + 24 * beatSec, 0.5);
-  audio.crash(startAt + 38.5 * beatSec, 0.6);
+  audio.crash(chorusAt, 0.9);
+  audio.crash(chorusAt + 24 * beatSec, 0.5);
+  audio.crash(chorusAt + 38.5 * beatSec, 0.6);
 
   for (const [beat, noteIndex, length] of EGG_LEAD) {
-    const atMs = EGG_START_DELAY + beat * EGG_BEAT_MS;
+    const atMs = EGG_START_DELAY + (EGG_INTRO_BEATS + beat) * EGG_BEAT_MS;
     const lengthMs = Math.max(110, length * EGG_BEAT_MS);
     eggTimers.push(
       window.setTimeout(() => {
