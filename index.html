@@ -44,8 +44,23 @@
         </p>
 
         <div class="topbar-actions">
-          <button class="about-link" id="about-open" type="button">
-            About
+          <button
+            class="about-link"
+            id="about-open"
+            type="button"
+            aria-label="About"
+          >
+            <span class="about-label">About</span>
+            <span class="about-glyph" aria-hidden="true">?</span>
+          </button>
+          <button
+            class="midi"
+            id="midi"
+            type="button"
+            aria-label="Connect MIDI input"
+          >
+            <span class="midi-dot" aria-hidden="true"></span>
+            <span id="midi-label">MIDI</span>
           </button>
           <button
             class="record"
@@ -403,7 +418,8 @@
         <p>
           Eight voices run through a resonant filter, a soft envelope, a
           ping-pong echo and a generated reverb. The arp steps through a held
-          chord on the shared tempo, and the analyser is real, so the orb — or
+          chord on the shared tempo, and a MIDI keyboard can drive the same
+          voices across its full range. The analyser is real, so the orb — or
           the scope — moves with the notes. The demo is a live arrangement of
           the chorus of <em>Goodness of God</em>, not a recording.
         </p>
@@ -416,7 +432,9 @@
 
         <p class="about-foot">
           Play with <kbd>A</kbd>–<kbd>K</kbd>, or tap and drag across the pads
-          to glide. Turn on the arp to step through a held chord; latch keeps it
+          to glide. Connect a MIDI keyboard from the top bar: notes in the
+          C3–C4 range light the pads, and other notes play across the full
+          range. Turn on the arp to step through a held chord; latch keeps it
           running. Switch the stage between Orb and Scope, and use the range
           sliders to shape the tone, echo and space. The demo is synthesized
           live, not a recording.

@@ -47,6 +47,9 @@ npm run preview   # serve the production build at /wave/
   The choice is saved with the rest of the settings.
 - **Drag across the pads** to glissando from note to note. Multi-touch still
   works: each pointer can glide independently.
+- **MIDI** requests Web MIDI access from the top bar. Connected inputs play
+  through the same engine with velocity; notes in the C3–C4 range light the
+  pads, and notes outside the keybed still play. MIDI can also feed the arp.
 - **Filter** sweeps the shared low-pass cutoff. **Echo** controls how much of
   the ping-pong delay returns. **Space** sets the shared reverb return.
 - **Play the chorus** performs an arrangement of “Goodness of God” at the
@@ -73,7 +76,8 @@ the gag is visual-only. The About dialog has a small hint.
 ## What is implemented
 
 **Sound**
-- Eight-voice polyphony with three oscillators per voice (saw, triangle, sine).
+- One synth voice per pad (eight playable pads), three oscillators per voice
+  (saw, triangle, sine); MIDI and demo notes reuse the same voice builder.
 - Shared resonant low-pass filter, per-note ADSR envelope, detuned layers.
 - Stereo ping-pong delay with damped feedback, soft-clip saturation and a
   master compressor.
@@ -127,6 +131,17 @@ the gag is visual-only. The About dialog has a small hint.
 - Downloads use the browser's preferred recording format (WebM/Opus on
   Chromium and Firefox, M4A/AAC where that is the available option).
 
+**MIDI**
+- Web MIDI access is requested only from the top-bar button. Every connected
+  input is attached, and device add/remove updates the button state.
+- Note-on/off and velocity are mapped into the same voices. Notes in the
+  C3–C4 range light and feed the pads; other notes play through the full-range
+  MIDI voice path without a pad.
+- In-range MIDI notes are ordinary input sources, so they work with latch and
+  the arpeggiator. CC, pitch bend and clock messages are ignored.
+- If access is denied or the browser does not support Web MIDI, the button
+  reports it and the rest of the instrument keeps working.
+
 **Easter egg**
 - A hidden ~1:22 synth-pop edit of “Never Gonna Give You Up” at 113 BPM:
   the tom-fill intro, verse 1, pre-chorus and the first chorus, with a bright
@@ -162,6 +177,7 @@ index.html        static shell, copy, controls
 src/style.css     layout, identity, responsive + reduced-motion styles
 src/audio.ts      Web Audio graph, presets, voices, note helpers
 src/arp.ts        lookahead arpeggiator scheduler and pattern logic
+src/midi.ts       Web MIDI access, device tracking and message parsing
 src/settings.ts   validated localStorage persistence
 src/orb.ts        Canvas 2D visualizer and particle system
 src/main.ts       input, presets, recording, demo, lifecycle
@@ -174,10 +190,9 @@ synthesized at runtime.
 
 ## Roadmap
 
-One candidate next pass:
-
-1. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
-   the existing engine and keybed.
+All five original roadmap passes are implemented: arpeggiator + tempo,
+record & share, sound design + persistence, visual polish, and MIDI input.
+The “Rough edges” below are the honest next candidates.
 
 ## Rough edges
 
@@ -188,6 +203,11 @@ One candidate next pass:
 - The arp is monophonic per step and has no swing or per-step editing yet.
 - Recording uses the browser's `MediaRecorder` container; there is no WAV
   export or server-side sharing. Takes are session-only.
+- Browser-recorded WebM blobs do not always carry duration metadata, so the
+  preview player can show 0:00 until played; the take dialog's timer is
+  authoritative.
+- MIDI covers note-on/off and velocity only. CC, sustain pedal, pitch bend and
+  clock are ignored. Notes outside the one-octave keybed play without a pad.
 - The circular spectrum maps lower frequencies to more ticks for looks, not
   scientific accuracy; the scope is likewise a stylized view, not a calibrated
   measurement.

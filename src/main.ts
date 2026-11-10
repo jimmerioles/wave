@@ -21,6 +21,7 @@ import {
   type StoredSettings,
   type VisualMode,
 } from "./settings";
+import { MidiInput, type MidiStatus } from "./midi";
 import { OrbScene } from "./orb";
 import {
   SONG_BASS,
@@ -58,6 +59,8 @@ const space = must<HTMLInputElement>("#space");
 const spaceOut = must<HTMLOutputElement>("#space-out");
 const muteButton = must<HTMLButtonElement>("#mute");
 const muteLabel = must<HTMLElement>("#mute-label");
+const midiButton = must<HTMLButtonElement>("#midi");
+const midiLabel = must<HTMLElement>("#midi-label");
 const recordButton = must<HTMLButtonElement>("#record");
 const recordLabel = must<HTMLElement>("#record-label");
 const takeButton = must<HTMLButtonElement>("#take");
@@ -104,7 +107,50 @@ const NOTE_ACCENTS = [
   "#6df3cd",
 ];
 
+/** MIDI note number to the matching one-octave pad, where one exists. */
+const MIDI_PAD: Record<number, number> = {
+  48: 0,
+  50: 1,
+  52: 2,
+  53: 3,
+  55: 4,
+  57: 5,
+  59: 6,
+  60: 7,
+};
+
+const MIDI_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
+
+function midiNoteName(midi: number): string {
+  return `${MIDI_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+}
+
+function midiVisualIndex(midi: number): number {
+  return Math.max(0, Math.min(9, (midi - 48) * 0.5 + 3.5));
+}
+
+interface MidiNoteState {
+  source: string;
+  padIndex: number | null;
+  velocity: number;
+}
+
 const activeSources = new Map<string, number>();
+const midiActive = new Map<number, MidiNoteState>();
+let midiReadoutActive = false;
 const noteCounts = new Array<number>(NOTES.length).fill(0);
 const heldKeys = new Set<string>();
 const glidePointers = new Map<number, string>();
@@ -277,7 +323,11 @@ window.addEventListener("pointercancel", endGlide, { passive: true });
 function syncPlayingState(): void {
   document.body.classList.toggle(
     "is-playing",
-    activeSources.size > 0 || demoPlaying || eggPlaying || arp.isPlaying,
+    activeSources.size > 0 ||
+      midiActive.size > 0 ||
+      demoPlaying ||
+      eggPlaying ||
+      arp.isPlaying,
   );
 }
 
@@ -307,7 +357,7 @@ function setReadout(noteIndex: number): void {
 function resetReadoutSoon(): void {
   if (readoutTimer !== null) clearTimeout(readoutTimer);
   readoutTimer = window.setTimeout(() => {
-    if (activeSources.size > 0 || arp.isPlaying) return;
+    if (activeSources.size > 0 || arp.isPlaying || midiReadoutActive) return;
     noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
     noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
     noteReadout.classList.remove("is-live");
@@ -321,6 +371,7 @@ function press(noteIndex: number, source: string, velocity = 1): void {
 
   engine.ensure();
   const user = isUserSource(source);
+  if (user) midiReadoutActive = false;
 
   // Latch builds a chord that survives key-up. A press with nothing else
   // held starts a new chord.
@@ -383,6 +434,7 @@ function release(source: string, releaseSeconds?: number): void {
 }
 
 function releaseAll(): void {
+  releaseMidiNotes();
   for (const source of [...activeSources.keys()]) release(source);
   heldKeys.clear();
   glidePointers.clear();
@@ -431,9 +483,11 @@ function showArpStep(noteIndex: number, durationMs: number): void {
   pads[noteIndex]?.classList.add("is-arp-step");
 
   lastNote = noteIndex;
-  noteReadout.textContent = NOTES[noteIndex]?.name ?? "—";
-  noteSub.textContent = `arp · ${ARP_PATTERN_LABELS[arp.pattern]}`;
-  noteReadout.classList.add("is-live");
+  if (!midiReadoutActive) {
+    noteReadout.textContent = NOTES[noteIndex]?.name ?? "—";
+    noteSub.textContent = `arp · ${ARP_PATTERN_LABELS[arp.pattern]}`;
+    noteReadout.classList.add("is-live");
+  }
   orb.burst(noteIndex);
 
   arpStepTimer = window.setTimeout(() => {
@@ -451,6 +505,11 @@ function clearArpStep(): void {
   }
   for (const pad of pads) pad.classList.remove("is-arp-step");
   arpStepNote = -1;
+
+  if (midiReadoutActive) {
+    syncPlayingState();
+    return;
+  }
 
   if (activeSources.size > 0) {
     const remaining = [...activeSources.values()][activeSources.size - 1];
@@ -948,6 +1007,10 @@ function formatClock(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
+function formatTakeDuration(seconds: number): string {
+  return formatClock(Math.max(1, Math.round(seconds)));
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const kb = bytes / 1024;
@@ -1028,15 +1091,15 @@ function finishRecording(session: RecordingSession): void {
   const extension = extensionForMime(session.mimeType);
   takeAudio.src = takeUrl;
   takeAudio.load();
-  takeMeta.textContent = `${formatClock(takeDuration)} · ${formatBytes(
+  takeMeta.textContent = `${formatTakeDuration(takeDuration)} · ${formatBytes(
     blob.size,
   )} · ${mimeLabel(session.mimeType)}`;
   takeDownload.href = takeUrl;
   takeDownload.download = `wave-take-${stamp}.${extension}`;
-  takeLabel.textContent = formatClock(takeDuration);
+  takeLabel.textContent = formatTakeDuration(takeDuration);
   takeButton.setAttribute(
     "aria-label",
-    `Open take, ${formatClock(takeDuration)}`,
+    `Open take, ${formatTakeDuration(takeDuration)}`,
   );
   takeButton.hidden = false;
   takeDialog.showModal();
@@ -1157,6 +1220,149 @@ takeDialog.addEventListener("click", (event) => {
   if (event.target === takeDialog) takeDialog.close();
 });
 takeDiscard.addEventListener("click", discardTake);
+
+/* -------------------------------------------------------------------------
+   MIDI input
+   ------------------------------------------------------------------------- */
+
+function setMidiReadout(note: number, velocity: number): void {
+  midiReadoutActive = true;
+  if (readoutTimer !== null) {
+    clearTimeout(readoutTimer);
+    readoutTimer = null;
+  }
+  noteReadout.textContent = midiNoteName(note);
+  noteSub.textContent = `midi · vel ${Math.round(velocity)}`;
+  noteReadout.classList.add("is-live");
+}
+
+function restoreReadoutAfterMidi(): void {
+  if (activeSources.size > 0) {
+    const remaining = [...activeSources.values()][activeSources.size - 1];
+    if (remaining !== undefined) setReadout(remaining);
+    return;
+  }
+
+  if (midiActive.size > 0) {
+    const last = [...midiActive.entries()][midiActive.size - 1];
+    if (last) {
+      setMidiReadout(last[0], last[1].velocity);
+      return;
+    }
+  }
+
+  noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+  noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
+  noteReadout.classList.remove("is-live");
+}
+
+function midiNoteOn(note: number, velocity: number): void {
+  if (midiActive.has(note)) return;
+
+  const padIndex = MIDI_PAD[note] ?? null;
+  const source = `midi:${note}`;
+  const normalized = Math.max(0.12, Math.min(1, velocity / 127));
+
+  engine.ensure();
+
+  if (padIndex !== null) {
+    press(padIndex, source, normalized);
+  } else {
+    engine.midiNoteOn(note, normalized);
+    orb.burst(midiVisualIndex(note));
+    setMidiReadout(note, velocity);
+  }
+
+  midiActive.set(note, { source, padIndex, velocity });
+  syncPlayingState();
+}
+
+function midiNoteOff(note: number): void {
+  const active = midiActive.get(note);
+  if (!active) return;
+  midiActive.delete(note);
+
+  if (active.padIndex !== null) {
+    release(active.source);
+  } else {
+    engine.midiNoteOff(note);
+  }
+
+  const hasOutOfRange = [...midiActive.values()].some(
+    (entry) => entry.padIndex === null,
+  );
+  if (!hasOutOfRange) midiReadoutActive = false;
+
+  restoreReadoutAfterMidi();
+  syncPlayingState();
+}
+
+function releaseMidiNotes(): void {
+  for (const [note, active] of midiActive) {
+    if (active.padIndex !== null) {
+      release(active.source);
+    } else {
+      engine.midiNoteOff(note);
+    }
+  }
+  midiActive.clear();
+  midiReadoutActive = false;
+  restoreReadoutAfterMidi();
+  syncPlayingState();
+}
+
+function updateMidiUi(status: MidiStatus, devices: number): void {
+  midiButton.dataset.state = status;
+  midiButton.disabled = status === "unsupported";
+
+  const label =
+    status === "ready"
+      ? devices > 0
+        ? `MIDI ${devices}`
+        : "MIDI"
+      : status === "connecting"
+        ? "MIDI…"
+        : status === "denied"
+          ? "MIDI off"
+          : status === "unsupported"
+            ? "No MIDI"
+            : "MIDI";
+  midiLabel.textContent = label;
+
+  const description =
+    status === "ready"
+      ? `MIDI connected, ${devices} input${devices === 1 ? "" : "s"}`
+      : status === "connecting"
+        ? "Connecting MIDI"
+        : status === "denied"
+          ? "MIDI access was blocked or timed out, click to retry"
+          : status === "unsupported"
+            ? "MIDI is not supported in this browser"
+            : "Connect MIDI input";
+  midiButton.setAttribute("aria-label", description);
+  midiButton.title = description;
+}
+
+const midi = new MidiInput({
+  onNoteOn: midiNoteOn,
+  onNoteOff: midiNoteOff,
+  onStatus: updateMidiUi,
+  onDisconnect: releaseMidiNotes,
+});
+
+midiButton.addEventListener("click", () => {
+  if (!midi.supported) {
+    setEggToast("MIDI is not supported here", true, 3600);
+    return;
+  }
+  void midi.connect().then(() => {
+    if (midi.state === "ready" && midi.deviceCount === 0) {
+      setEggToast("no MIDI inputs found", true, 2800);
+    }
+  });
+});
+
+updateMidiUi(midi.supported ? "idle" : "unsupported", 0);
 
 /* -------------------------------------------------------------------------
    Easter egg: the opening of "Never Gonna Give You Up"

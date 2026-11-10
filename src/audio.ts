@@ -176,7 +176,7 @@ export function formatHz(hz: number): string {
 }
 
 interface Voice {
-  note: number;
+  key: string;
   envelope: GainNode;
   oscillators: OscillatorNode[];
   tail: GainNode;
@@ -244,7 +244,7 @@ export class SynthEngine {
   private muteGain: GainNode | null = null;
   private recordDestination: MediaStreamAudioDestinationNode | null = null;
 
-  private voices = new Map<number, Voice>();
+  private voices = new Map<string, Voice>();
   private preset: Preset = PRESETS.bloom;
   private cutoffValue = PRESETS.bloom.cutoff;
   private echoValue = PRESETS.bloom.echo / 100;
@@ -396,15 +396,46 @@ export class SynthEngine {
   }
 
   noteOn(noteIndex: number, velocity = 1): void {
+    const note = NOTES[noteIndex];
+    if (!note) return;
+    this.startVoice(`note:${noteIndex}`, note.frequency, velocity);
+  }
+
+  noteOff(noteIndex: number, release?: number): void {
+    this.stopVoice(`note:${noteIndex}`, release);
+  }
+
+  /** Play an arbitrary MIDI note in the same synth voice. */
+  midiNoteOn(midi: number, velocity = 1): void {
+    const clamped = Math.max(0, Math.min(127, Math.round(midi)));
+    this.startVoice(`midi:${clamped}`, midiToHz(clamped), velocity);
+  }
+
+  midiNoteOff(midi: number): void {
+    this.stopVoice(`midi:${Math.max(0, Math.min(127, Math.round(midi)))}`);
+  }
+
+  private startVoice(
+    key: string,
+    frequency: number,
+    velocity: number,
+  ): void {
     const ctx = this.context;
     if (!ctx) return;
 
-    // One voice per note; retriggering replaces the old tail.
-    const existing = this.voices.get(noteIndex);
+    // One voice per key; retriggering replaces the old tail.
+    const existing = this.voices.get(key);
     if (existing) this.releaseVoice(existing, 0.06);
 
-    const voice = this.createVoice(noteIndex, velocity, ctx.currentTime);
-    if (voice) this.voices.set(noteIndex, voice);
+    const voice = this.createVoice(key, frequency, velocity, ctx.currentTime);
+    if (voice) this.voices.set(key, voice);
+  }
+
+  private stopVoice(key: string, release?: number): void {
+    const voice = this.voices.get(key);
+    if (!voice) return;
+    this.voices.delete(key);
+    this.releaseVoice(voice, release ?? this.preset.release);
   }
 
   /**
@@ -417,14 +448,16 @@ export class SynthEngine {
     duration: number,
     velocity = 1,
   ): void {
+    const note = NOTES[noteIndex];
     const ctx = this.context;
-    if (!ctx) return;
+    if (!note || !ctx) return;
     const at = Math.max(when, ctx.currentTime + 0.003);
-    this.createVoice(noteIndex, velocity, at, duration);
+    this.createVoice(`arp:${noteIndex}`, note.frequency, velocity, at, duration);
   }
 
   private createVoice(
-    noteIndex: number,
+    key: string,
+    frequency: number,
     velocity: number,
     at: number,
     duration?: number,
@@ -434,11 +467,7 @@ export class SynthEngine {
     const delayInput = this.delayInput;
     if (!ctx || !bus || !delayInput) return null;
 
-    const note = NOTES[noteIndex];
-    if (!note) return null;
-
     const preset = this.preset;
-    const frequency = note.frequency;
 
     const envelope = ctx.createGain();
     envelope.gain.value = 0.0001;
@@ -483,7 +512,7 @@ export class SynthEngine {
     envelope.gain.exponentialRampToValueAtTime(sustainPoint, decayEnd);
 
     const voice: Voice = {
-      note: noteIndex,
+      key,
       envelope,
       oscillators,
       tail: send,
@@ -530,17 +559,10 @@ export class SynthEngine {
     return voice;
   }
 
-  noteOff(noteIndex: number, release?: number): void {
-    const voice = this.voices.get(noteIndex);
-    if (!voice) return;
-    this.voices.delete(noteIndex);
-    this.releaseVoice(voice, release ?? this.preset.release);
-  }
-
   /** Short fade-out for every voice, used when the page is hidden. */
   allNotesOff(immediate = false): void {
-    for (const [index, voice] of this.voices) {
-      this.voices.delete(index);
+    for (const [key, voice] of this.voices) {
+      this.voices.delete(key);
       this.releaseVoice(voice, immediate ? 0.05 : this.preset.release);
     }
   }
