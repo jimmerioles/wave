@@ -3,6 +3,7 @@ import {
   KEYBED_SIZE,
   NOTES,
   PRESETS,
+  RickrollAudio,
   cutoffFromSlider,
   formatHz,
   type PresetKey,
@@ -506,63 +507,150 @@ muteButton.addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------------
-   Easter egg: a short synth quote of "Never Gonna Give You Up"
+   Easter egg: the chorus of "Never Gonna Give You Up"
 
-   The melody is transposed to C so it fits the keybed; E4 is one of the
-   demo-only notes. It stops the main demo, borrows the stage for 16 beats at
-   113 BPM, then puts everything back. Triggered by triple-tapping the brand
-   or entering the Konami code.
+   A 12-second, 118 BPM synth-pop arrangement: bright lead, syncopated synth
+   bass, drum machine and the Bb - C - Dm - C chord bed. The lead is
+   transposed to C so it fits the keybed; the bass sits an octave below. It
+   stops the main demo, borrows the stage for six bars, then puts everything
+   back. Triggered by triple-tapping the brand or entering the Konami code.
    ------------------------------------------------------------------------- */
 
-const EGG_BPM = 113;
+const EGG_BPM = 118;
 const EGG_BEAT_MS = 60000 / EGG_BPM;
-const EGG_BEATS = 16;
+const EGG_BEATS = 24;
+const EGG_BARS = 6;
 const EGG_LENGTH = EGG_BEATS * EGG_BEAT_MS;
-const EGG_RELEASE = 0.22;
+/** Milliseconds between the trigger and the first sample. */
+const EGG_START_DELAY = 60;
 
-const EGG_EVENTS: readonly DemoEvent[] = [
+type EggLead = readonly [beat: number, note: number, length: number];
+type EggBass = readonly [beat: number, midi: number, length: number];
+type EggChord = readonly [
+  beat: number,
+  midis: readonly number[],
+  length: number,
+];
+
+const BASS_MIDI = {
+  D2: 38,
+  F2: 41,
+  E2: 40,
+  C2: 36,
+  A1: 33,
+  G1: 31,
+} as const;
+
+const EGG_LEAD: readonly EggLead[] = [
   // "Never gonna give you up"
-  [0, N.G3, 0.4],
-  [0.5, N.A3, 0.4],
-  [1, N.C4, 0.4],
-  [1.5, N.A3, 0.4],
-  [2, N.E4, 0.4],
-  [2.5, N.E4, 0.4],
-  [3, N.D4, 1.0],
+  [1, N.D3, 0.46],
+  [1.5, N.E3, 0.46],
+  [2, N.F3, 0.23],
+  [2.5, N.F3, 0.46],
+  [3, N.G3, 0.46],
+  [3.5, N.E3, 0.69],
+  [4.25, N.D3, 0.23],
+  [4.5, N.C3, 3.17],
 
   // "Never gonna let you down"
-  [4, N.G3, 0.4],
-  [4.5, N.A3, 0.4],
-  [5, N.C4, 0.4],
-  [5.5, N.A3, 0.4],
-  [6, N.D4, 0.4],
-  [6.5, N.D4, 0.4],
-  [7, N.C4, 0.25],
-  [7.25, N.B3, 0.25],
-  [7.5, N.A3, 0.5],
+  [8.5, N.D3, 0.23],
+  [9, N.D3, 0.46],
+  [9.5, N.E3, 0.46],
+  [10, N.F3, 0.46],
+  [10.5, N.D3, 0.46],
+  [11.5, N.C3, 0.46],
+  [12, N.C4, 0.69],
+  [13, N.C4, 0.46],
+  [13.5, N.G3, 0.92],
+  [14.5, N.A3, 0.46],
+  [15, N.G3, 0.46],
+  [15.5, N.F3, 0.46],
 
   // "Never gonna run around and desert you"
-  [8, N.G3, 0.4],
-  [8.5, N.A3, 0.4],
-  [9, N.C4, 0.4],
-  [9.5, N.A3, 0.4],
-  [10, N.C4, 0.4],
-  [10.5, N.D4, 0.4],
-  [11, N.B3, 0.4],
-  [11.5, N.G3, 0.4],
-  [12, N.G3, 0.4],
-  [12.5, N.D4, 0.4],
-  [13, N.C4, 3.0],
+  [16.5, N.D3, 0.23],
+  [17, N.D3, 0.46],
+  [17.5, N.E3, 0.46],
+  [18, N.F3, 0.46],
+  [18.5, N.D3, 0.46],
+  [19, N.F3, 0.46],
+  [19.5, N.G3, 0.46],
+  [20.5, N.E3, 0.46],
+  [21, N.D3, 0.46],
+  [21.5, N.E3, 0.92],
+  [22.25, N.D3, 0.23],
+  [22.5, N.C3, 1.42],
+];
 
-  // A small C-major cushion under the last note.
-  [13, N.C3, 3.0, 0.46],
-  [13, N.E3, 3.0, 0.44],
+const EGG_BASS: readonly EggBass[] = [
+  [0, BASS_MIDI.D2, 0.23],
+  [0.5, BASS_MIDI.D2, 0.23],
+  [0.75, BASS_MIDI.D2, 0.23],
+  [1.25, BASS_MIDI.F2, 0.23],
+  [1.5, BASS_MIDI.E2, 0.23],
+  [2, BASS_MIDI.C2, 0.5],
+  [2.5, BASS_MIDI.D2, 0.23],
+  [3.5, BASS_MIDI.A1, 0.23],
+  [3.75, BASS_MIDI.C2, 0.23],
+  [4, BASS_MIDI.D2, 0.23],
+  [4.5, BASS_MIDI.C2, 0.23],
+  [4.75, BASS_MIDI.D2, 0.23],
+  [5.25, BASS_MIDI.F2, 0.23],
+  [5.5, BASS_MIDI.E2, 0.23],
+  [7.5, BASS_MIDI.A1, 0.23],
+  [7.75, BASS_MIDI.C2, 0.23],
+  [8, BASS_MIDI.D2, 0.23],
+  [8.5, BASS_MIDI.D2, 0.23],
+  [8.75, BASS_MIDI.D2, 0.23],
+  [9.25, BASS_MIDI.F2, 0.23],
+  [9.5, BASS_MIDI.E2, 0.23],
+  [10, BASS_MIDI.C2, 0.5],
+  [10.5, BASS_MIDI.D2, 0.23],
+  [11.5, BASS_MIDI.D2, 0.23],
+  [11.75, BASS_MIDI.D2, 0.23],
+  [12, BASS_MIDI.G1, 0.23],
+  [12.5, BASS_MIDI.G1, 0.23],
+  [12.75, BASS_MIDI.G1, 0.23],
+  [13.25, BASS_MIDI.G1, 0.23],
+  [13.5, BASS_MIDI.C2, 0.23],
+  [14.5, BASS_MIDI.C2, 0.23],
+  [14.75, BASS_MIDI.C2, 0.23],
+  [15, BASS_MIDI.C2, 0.23],
+  [15.5, BASS_MIDI.A1, 0.23],
+  [15.75, BASS_MIDI.C2, 0.23],
+  [16, BASS_MIDI.D2, 0.23],
+  [16.5, BASS_MIDI.D2, 0.23],
+  [16.75, BASS_MIDI.D2, 0.23],
+  [17.25, BASS_MIDI.F2, 0.23],
+  [17.5, BASS_MIDI.E2, 0.23],
+  [18, BASS_MIDI.C2, 0.5],
+  [18.5, BASS_MIDI.D2, 0.23],
+  [19.5, BASS_MIDI.A1, 0.23],
+  [19.75, BASS_MIDI.C2, 0.23],
+  [20, BASS_MIDI.D2, 0.23],
+  [20.5, BASS_MIDI.C2, 0.23],
+  [20.75, BASS_MIDI.D2, 0.23],
+  [21.25, BASS_MIDI.F2, 0.23],
+  [21.5, BASS_MIDI.E2, 0.23],
+  [23.5, BASS_MIDI.A1, 0.23],
+  [23.75, BASS_MIDI.C2, 0.23],
+];
+
+const EGG_CHORDS: readonly EggChord[] = [
+  // Bbmaj7 - C - Bbmaj7 - Dm7 - C - Bbmaj7 - C
+  [0, [58, 62, 65, 69], 4],
+  [4, [60, 64, 67], 4],
+  [8, [58, 62, 65, 69], 4],
+  [12, [62, 65, 69, 72], 1.5],
+  [13.5, [60, 64, 67], 2.5],
+  [16, [58, 62, 65, 69], 4],
+  [20, [60, 64, 67], 4],
 ];
 
 let eggTimers: number[] = [];
 let eggPlaying = false;
 let eggRun = 0;
 let eggToastTimer: number | null = null;
+let eggAudio: RickrollAudio | null = null;
 
 function setEggToast(text: string, visible: boolean): void {
   eggToast.textContent = text;
@@ -581,14 +669,27 @@ function setEggToast(text: string, visible: boolean): void {
   }
 }
 
+function isNoteHeldByUser(noteIndex: number): boolean {
+  for (const value of activeSources.values()) {
+    if (value === noteIndex) return true;
+  }
+  return false;
+}
+
 function startEgg(): void {
   if (eggPlaying) return;
+  engine.ensure();
+
+  const ctx = engine.audioContext;
+  const destination = engine.analyser;
+  if (!ctx || !destination) return;
+
   if (demoPlaying) stopDemo();
 
-  engine.ensure();
   eggRun++;
   const run = eggRun;
   eggPlaying = true;
+  eggTimers = [];
 
   document.body.classList.add("is-rolled");
   stagePreset.textContent = "Rolled";
@@ -598,48 +699,97 @@ function startEgg(): void {
     muted ? "you just got wave-rolled (silently)" : "you just got wave-rolled",
     true,
   );
+  noteReadout.textContent = "♪";
+  noteSub.textContent = "never gonna";
+  noteReadout.classList.add("is-live");
   syncPlayingState();
 
-  // Bass notes first on shared beats so the readout features the melody.
-  const events = [...EGG_EVENTS].sort(
-    (a, b) => a[0] - b[0] || (a[3] ?? 0.7) - (b[3] ?? 0.7),
-  );
+  const audio = new RickrollAudio(ctx, destination);
+  eggAudio = audio;
+  const startAt = ctx.currentTime + EGG_START_DELAY / 1000;
+  const beatSec = 60 / EGG_BPM;
 
-  events.forEach(([start, noteIndex, length, velocity], index) => {
-    const source = `egg:${run}:${index}`;
+  for (const [beat, noteIndex, length] of EGG_LEAD) {
+    const note = NOTES[noteIndex];
+    if (!note) continue;
+    audio.playLead(
+      note.frequency,
+      startAt + beat * beatSec,
+      length * beatSec,
+      0.9,
+    );
+  }
 
+  for (const [beat, midi, length] of EGG_BASS) {
+    audio.playBass(midi, startAt + beat * beatSec, length * beatSec, 0.95);
+  }
+
+  for (const [beat, midis, length] of EGG_CHORDS) {
+    audio.playChord(midis, startAt + beat * beatSec, length * beatSec, 0.55);
+  }
+
+  for (let bar = 0; bar < EGG_BARS; bar++) {
+    const b = bar * 4;
+    audio.kick(startAt + b * beatSec, 0.95);
+    audio.kick(startAt + (b + 2) * beatSec, 0.9);
+    audio.snare(startAt + (b + 1) * beatSec, 0.85);
+    audio.snare(startAt + (b + 3) * beatSec, 0.85);
+
+    for (let i = 0; i < 4; i++) {
+      audio.hat(startAt + (b + i) * beatSec, i === 0 ? 0.8 : 0.65);
+    }
+    audio.hat(startAt + (b + 0.5) * beatSec, 0.6, true);
+    audio.hat(startAt + (b + 1.5) * beatSec, 0.5);
+    audio.hat(startAt + (b + 1.75) * beatSec, 0.4);
+    audio.hat(startAt + (b + 2.5) * beatSec, 0.65, true);
+    audio.hat(startAt + (b + 3.5) * beatSec, 0.6, true);
+  }
+
+  audio.crash(startAt, 0.9);
+  audio.crash(startAt + 22 * beatSec, 0.6);
+
+  for (const [beat, noteIndex, length] of EGG_LEAD) {
+    const atMs = EGG_START_DELAY + beat * EGG_BEAT_MS;
+    const lengthMs = Math.max(110, length * EGG_BEAT_MS);
     eggTimers.push(
       window.setTimeout(() => {
         if (!eggPlaying || run !== eggRun) return;
-        press(noteIndex, source, velocity ?? 0.7);
-      }, start * EGG_BEAT_MS + 40),
+        if (!isNoteHeldByUser(noteIndex)) {
+          setPadState(noteIndex, true);
+          orb.burst(noteIndex);
+        }
+        eggTimers.push(
+          window.setTimeout(() => {
+            if (!eggPlaying || run !== eggRun) return;
+            if (!isNoteHeldByUser(noteIndex)) {
+              setPadState(noteIndex, false);
+            }
+          }, lengthMs),
+        );
+      }, atMs),
     );
-
-    eggTimers.push(
-      window.setTimeout(
-        () => release(source, EGG_RELEASE),
-        (start + length) * EGG_BEAT_MS + 40,
-      ),
-    );
-  });
+  }
 
   eggTimers.push(
     window.setTimeout(() => {
       if (run === eggRun) stopEgg();
-    }, EGG_LENGTH + 900),
+    }, EGG_LENGTH + 1500),
   );
 }
 
 function stopEgg(): void {
-  if (!eggPlaying && eggTimers.length === 0) return;
+  if (!eggPlaying && eggTimers.length === 0 && !eggAudio) return;
 
   eggRun++;
   eggPlaying = false;
   for (const timer of eggTimers) clearTimeout(timer);
   eggTimers = [];
 
-  for (const source of [...activeSources.keys()]) {
-    if (source.startsWith("egg:")) release(source);
+  eggAudio?.stop();
+  eggAudio = null;
+
+  for (let i = 0; i < KEYBED_SIZE; i++) {
+    if (!isNoteHeldByUser(i)) setPadState(i, false);
   }
 
   document.body.classList.remove("is-rolled");
@@ -647,6 +797,16 @@ function stopEgg(): void {
   stagePreset.dataset.preset = currentPreset;
   document.body.dataset.preset = currentPreset;
   setEggToast("", false);
+
+  if (activeSources.size > 0) {
+    const remaining = [...activeSources.values()][activeSources.size - 1];
+    if (remaining !== undefined) setReadout(remaining);
+  } else {
+    noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+    noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
+    noteReadout.classList.remove("is-live");
+  }
+
   syncPlayingState();
 }
 
