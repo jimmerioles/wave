@@ -10,6 +10,15 @@ import {
   SynthEngine,
 } from "./audio";
 import { OrbScene } from "./orb";
+import {
+  SONG_BASS,
+  SONG_BEATS,
+  SONG_DRUMS,
+  SONG_HORN,
+  SONG_LEAD,
+  SONG_PIANO,
+  SONG_STRINGS,
+} from "./rickroll-song";
 
 function must<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -479,6 +488,11 @@ function stopDemo(): void {
 }
 
 demoButton.addEventListener("click", () => {
+  if (eggPlaying) {
+    stopEgg();
+    return;
+  }
+
   if (demoPlaying) {
     stopDemo();
   } else {
@@ -507,280 +521,20 @@ muteButton.addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------------
-   Easter egg: the chorus of "Never Gonna Give You Up"
+   Easter egg: the opening of "Never Gonna Give You Up"
 
-   A 12-second, 118 BPM synth-pop arrangement: bright lead, syncopated synth
-   bass, drum machine and the Bb - C - Dm - C chord bed. The lead is
-   transposed to C so it fits the keybed; the bass sits an octave below. It
-   stops the main demo, borrows the stage for six bars, then puts everything
-   back. Triggered by triple-tapping the brand or entering the Konami code.
+   Intro, verse 1, pre-chorus and the first chorus, extracted from a reference
+   MIDI in the original A-flat major key. The pads follow the lead's scale
+   degrees; the bass, piano, strings, horn and drums are synthesized by
+   RickrollAudio. Triggered by triple-tapping the brand or the Konami code.
    ------------------------------------------------------------------------- */
 
-const EGG_BPM = 118;
+const EGG_BPM = 113;
 const EGG_BEAT_MS = 60000 / EGG_BPM;
-/** Tom fill (2.5) + four intro bars (16) + the second fill (2.5). */
-const EGG_INTRO_BEATS = 21;
-const EGG_CHORUS_BEATS = 40;
-const EGG_BEATS = EGG_INTRO_BEATS + EGG_CHORUS_BEATS;
-const EGG_BARS = 10;
+const EGG_BEATS = SONG_BEATS;
 const EGG_LENGTH = EGG_BEATS * EGG_BEAT_MS;
 /** Milliseconds between the trigger and the first sample. */
 const EGG_START_DELAY = 60;
-
-type EggLead = readonly [beat: number, note: number, length: number];
-type EggBass = readonly [beat: number, midi: number, length: number];
-type EggChord = readonly [
-  beat: number,
-  midis: readonly number[],
-  length: number,
-];
-
-const BASS_MIDI = {
-  D2: 38,
-  F2: 41,
-  E2: 40,
-  C2: 36,
-  A1: 33,
-  G1: 31,
-} as const;
-
-const EGG_LEAD: readonly EggLead[] = [
-  // "Never gonna give you up"
-  [1, N.D3, 0.46],
-  [1.5, N.E3, 0.46],
-  [2, N.F3, 0.23],
-  [2.5, N.F3, 0.46],
-  [3, N.G3, 0.46],
-  [3.5, N.E3, 0.69],
-  [4.25, N.D3, 0.23],
-  [4.5, N.C3, 3.17],
-
-  // "Never gonna let you down"
-  [8.5, N.D3, 0.23],
-  [9, N.D3, 0.46],
-  [9.5, N.E3, 0.46],
-  [10, N.F3, 0.46],
-  [10.5, N.D3, 0.46],
-  [11.5, N.C3, 0.46],
-  [12, N.C4, 0.69],
-  [13, N.C4, 0.46],
-  [13.5, N.G3, 0.92],
-  [14.5, N.A3, 0.46],
-  [15, N.G3, 0.46],
-  [15.5, N.F3, 0.46],
-
-  // "Never gonna run around and desert you"
-  [16.5, N.D3, 0.23],
-  [17, N.D3, 0.46],
-  [17.5, N.E3, 0.46],
-  [18, N.F3, 0.46],
-  [18.5, N.D3, 0.46],
-  [19, N.F3, 0.46],
-  [19.5, N.G3, 0.46],
-  [20.5, N.E3, 0.46],
-  [21, N.D3, 0.46],
-  [21.5, N.E3, 0.92],
-  [22.25, N.D3, 0.23],
-  [22.5, N.C3, 1.42],
-
-  // "Never gonna make you cry"
-  [24.5, N.D3, 0.23],
-  [25, N.D3, 0.46],
-  [25.5, N.E3, 0.46],
-  [26, N.F3, 0.46],
-  [26.5, N.D3, 0.46],
-  [27, N.C3, 0.46],
-
-  // "Never gonna say goodbye"
-  [28, N.G3, 0.46],
-  [28.5, N.G3, 0.23],
-  [29, N.G3, 0.46],
-  [29.5, N.A3, 0.46],
-  [30, N.G3, 1.67],
-
-  // "Never gonna tell a lie and hurt you"
-  [32, N.F3, 2.42],
-  [34.5, N.G3, 0.46],
-  [35, N.A3, 0.46],
-  [35.5, N.F3, 0.46],
-  [36, N.G3, 0.23],
-  [36.5, N.G3, 0.23],
-  [37, N.G3, 0.46],
-  [37.5, N.A3, 0.46],
-  [38, N.G3, 0.46],
-  [38.5, N.C3, 0.46],
-  [39, N.C3, 0.92],
-];
-
-const EGG_BASS: readonly EggBass[] = [
-  [0, BASS_MIDI.D2, 0.23],
-  [0.5, BASS_MIDI.D2, 0.23],
-  [0.75, BASS_MIDI.D2, 0.23],
-  [1.25, BASS_MIDI.F2, 0.23],
-  [1.5, BASS_MIDI.E2, 0.23],
-  [2, BASS_MIDI.C2, 0.5],
-  [2.5, BASS_MIDI.D2, 0.23],
-  [3.5, BASS_MIDI.A1, 0.23],
-  [3.75, BASS_MIDI.C2, 0.23],
-  [4, BASS_MIDI.D2, 0.23],
-  [4.5, BASS_MIDI.C2, 0.23],
-  [4.75, BASS_MIDI.D2, 0.23],
-  [5.25, BASS_MIDI.F2, 0.23],
-  [5.5, BASS_MIDI.E2, 0.23],
-  [7.5, BASS_MIDI.A1, 0.23],
-  [7.75, BASS_MIDI.C2, 0.23],
-  [8, BASS_MIDI.D2, 0.23],
-  [8.5, BASS_MIDI.D2, 0.23],
-  [8.75, BASS_MIDI.D2, 0.23],
-  [9.25, BASS_MIDI.F2, 0.23],
-  [9.5, BASS_MIDI.E2, 0.23],
-  [10, BASS_MIDI.C2, 0.5],
-  [10.5, BASS_MIDI.D2, 0.23],
-  [11.5, BASS_MIDI.D2, 0.23],
-  [11.75, BASS_MIDI.D2, 0.23],
-  [12, BASS_MIDI.G1, 0.23],
-  [12.5, BASS_MIDI.G1, 0.23],
-  [12.75, BASS_MIDI.G1, 0.23],
-  [13.25, BASS_MIDI.G1, 0.23],
-  [13.5, BASS_MIDI.C2, 0.23],
-  [14.5, BASS_MIDI.C2, 0.23],
-  [14.75, BASS_MIDI.C2, 0.23],
-  [15, BASS_MIDI.C2, 0.23],
-  [15.5, BASS_MIDI.A1, 0.23],
-  [15.75, BASS_MIDI.C2, 0.23],
-  [16, BASS_MIDI.D2, 0.23],
-  [16.5, BASS_MIDI.D2, 0.23],
-  [16.75, BASS_MIDI.D2, 0.23],
-  [17.25, BASS_MIDI.F2, 0.23],
-  [17.5, BASS_MIDI.E2, 0.23],
-  [18, BASS_MIDI.C2, 0.5],
-  [18.5, BASS_MIDI.D2, 0.23],
-  [19.5, BASS_MIDI.A1, 0.23],
-  [19.75, BASS_MIDI.C2, 0.23],
-  [20, BASS_MIDI.D2, 0.23],
-  [20.5, BASS_MIDI.C2, 0.23],
-  [20.75, BASS_MIDI.D2, 0.23],
-  [21.25, BASS_MIDI.F2, 0.23],
-  [21.5, BASS_MIDI.E2, 0.23],
-  [23.5, BASS_MIDI.A1, 0.23],
-  [23.75, BASS_MIDI.C2, 0.23],
-  [24, BASS_MIDI.D2, 0.23],
-  [24.5, BASS_MIDI.D2, 0.23],
-  [24.75, BASS_MIDI.D2, 0.23],
-  [25.25, BASS_MIDI.F2, 0.23],
-  [25.5, BASS_MIDI.E2, 0.23],
-  [26, BASS_MIDI.C2, 0.5],
-  [26.5, BASS_MIDI.D2, 0.23],
-  [27.5, BASS_MIDI.D2, 0.23],
-  [27.75, BASS_MIDI.D2, 0.23],
-  [28, BASS_MIDI.G1, 0.23],
-  [28.5, BASS_MIDI.G1, 0.23],
-  [28.75, BASS_MIDI.G1, 0.23],
-  [29.25, BASS_MIDI.G1, 0.23],
-  [29.5, BASS_MIDI.C2, 0.23],
-  [30.5, BASS_MIDI.C2, 0.23],
-  [30.75, BASS_MIDI.C2, 0.23],
-  [31, BASS_MIDI.C2, 0.23],
-  [31.5, BASS_MIDI.A1, 0.23],
-  [31.75, BASS_MIDI.C2, 0.23],
-  [32, BASS_MIDI.D2, 0.23],
-  [32.5, BASS_MIDI.D2, 0.23],
-  [32.75, BASS_MIDI.D2, 0.23],
-  [33.25, BASS_MIDI.F2, 0.23],
-  [33.5, BASS_MIDI.E2, 0.23],
-  [34, BASS_MIDI.C2, 0.5],
-  [34.5, BASS_MIDI.D2, 0.23],
-  [35.5, BASS_MIDI.A1, 0.23],
-  [35.75, BASS_MIDI.C2, 0.23],
-  [36, BASS_MIDI.D2, 0.23],
-  [36.5, BASS_MIDI.C2, 0.23],
-  [36.75, BASS_MIDI.D2, 0.23],
-  [37.25, BASS_MIDI.F2, 0.23],
-  [37.5, BASS_MIDI.E2, 0.23],
-  [39.5, BASS_MIDI.A1, 0.23],
-  [39.75, BASS_MIDI.C2, 0.23],
-];
-
-const EGG_CHORDS: readonly EggChord[] = [
-  // Bbmaj7 - C - Bbmaj7 - Dm7 - C - Bbmaj7 - C
-  [0, [58, 62, 65, 69], 4],
-  [4, [60, 64, 67], 4],
-  [8, [58, 62, 65, 69], 4],
-  [12, [62, 65, 69, 72], 1.5],
-  [13.5, [60, 64, 67], 2.5],
-  [16, [58, 62, 65, 69], 4],
-  [20, [60, 64, 67], 4],
-  [24, [58, 62, 65, 69], 4],
-  [28, [58, 62, 65, 69], 1.5],
-  [29.5, [60, 64, 67], 2.5],
-  [32, [58, 62, 65, 69], 4],
-  [36, [57, 60, 64, 67], 4],
-];
-
-/** Four bars of the intro groove, relative to the first kick at beat 2.5. */
-const EGG_INTRO_BASS: readonly EggBass[] = [
-  [0, BASS_MIDI.G1, 0.23],
-  [0.5, BASS_MIDI.G1, 0.23],
-  [0.75, BASS_MIDI.G1, 0.23],
-  [1.25, BASS_MIDI.E2, 0.23],
-  [1.5, BASS_MIDI.D2, 0.23],
-  [2, BASS_MIDI.C2, 0.5],
-  [2.5, BASS_MIDI.C2, 0.23],
-  [3.5, BASS_MIDI.A1, 0.23],
-  [3.75, BASS_MIDI.C2, 0.23],
-  [4, BASS_MIDI.A1, 0.23],
-  [4.5, BASS_MIDI.A1, 0.23],
-  [4.75, BASS_MIDI.A1, 0.23],
-  [5.25, BASS_MIDI.E2, 0.23],
-  [5.5, BASS_MIDI.D2, 0.23],
-  [6.5, BASS_MIDI.D2, 0.23],
-  [6.75, BASS_MIDI.D2, 0.23],
-  [7, BASS_MIDI.D2, 0.23],
-  [7.25, BASS_MIDI.E2, 0.23],
-  [7.75, BASS_MIDI.D2, 0.23],
-  [8, BASS_MIDI.G1, 0.23],
-  [8.5, BASS_MIDI.G1, 0.23],
-  [8.75, BASS_MIDI.G1, 0.23],
-  [9.25, BASS_MIDI.E2, 0.23],
-  [9.5, BASS_MIDI.D2, 0.23],
-  [10, BASS_MIDI.C2, 0.5],
-  [10.5, BASS_MIDI.C2, 0.23],
-  [11.5, BASS_MIDI.C2, 0.23],
-  [11.75, BASS_MIDI.C2, 0.23],
-  [12, BASS_MIDI.A1, 0.23],
-  [12.5, BASS_MIDI.A1, 0.23],
-  [12.75, BASS_MIDI.A1, 0.23],
-  [13.25, BASS_MIDI.E2, 0.23],
-  [13.5, BASS_MIDI.D2, 0.23],
-  [14.5, BASS_MIDI.C2, 0.23],
-  [15, BASS_MIDI.C2, 0.23],
-  [15.25, BASS_MIDI.C2, 0.23],
-  [15.75, BASS_MIDI.F2, 0.23],
-];
-
-const EGG_INTRO_CHORDS: readonly EggChord[] = [
-  [0, [62, 65, 69], 1.5],
-  [1.5, [60, 64, 67], 2.5],
-  [4, [60, 64, 67], 1.5],
-  [5.5, [62, 65, 69], 2.5],
-  [8, [62, 65, 69], 1.5],
-  [9.5, [60, 64, 67], 2.5],
-  [12, [60, 64, 67], 1.5],
-  [13.5, [62, 65, 69], 2.5],
-];
-
-const TOM_FILL: readonly (readonly [number, number, number])[] = [
-  [0, 220, 0.9],
-  [0.25, 220, 0.85],
-  [0.75, 220, 0.9],
-  [1, 220, 0.85],
-  [1.25, 160, 0.9],
-  [1.5, 160, 0.9],
-  [1.75, 160, 0.85],
-  [2, 110, 0.9],
-  [2.25, 110, 0.8],
-];
-
 let eggTimers: number[] = [];
 let eggPlaying = false;
 let eggRun = 0;
@@ -837,91 +591,101 @@ function startEgg(): void {
   noteReadout.textContent = "♪";
   noteSub.textContent = "never gonna";
   noteReadout.classList.add("is-live");
+
+  // Turn the demo button into the egg's stop/progress control.
+  demoButton.classList.remove("is-playing");
+  void demoButton.offsetWidth;
+  demoButton.style.setProperty("--demo-ms", `${EGG_LENGTH}ms`);
+  demoButton.classList.add("is-playing");
+  demoButton.setAttribute("aria-pressed", "true");
+  demoButton.setAttribute("aria-label", "Stop the wave-rolled song");
+  demoLabel.textContent = "Stop the song";
+  demoSub.textContent = "wave-rolled · tap to stop";
   syncPlayingState();
 
   const audio = new RickrollAudio(ctx, destination);
   eggAudio = audio;
   const startAt = ctx.currentTime + EGG_START_DELAY / 1000;
   const beatSec = 60 / EGG_BPM;
-  const introAt = startAt;
-  const chorusAt = startAt + EGG_INTRO_BEATS * beatSec;
+  const midiHz = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
 
-  const scheduleGroove = (baseAt: number, startBeat: number, bars: number) => {
-    for (let bar = 0; bar < bars; bar++) {
-      const b = startBeat + bar * 4;
-      audio.kick(baseAt + b * beatSec, 0.95);
-      audio.kick(baseAt + (b + 2) * beatSec, 0.9);
-      audio.snare(baseAt + (b + 1) * beatSec, 0.85);
-      audio.snare(baseAt + (b + 3) * beatSec, 0.85);
-
-      for (let i = 0; i < 4; i++) {
-        audio.hat(baseAt + (b + i) * beatSec, i === 0 ? 0.8 : 0.65);
-      }
-      audio.hat(baseAt + (b + 0.5) * beatSec, 0.6, true);
-      audio.hat(baseAt + (b + 1.5) * beatSec, 0.5);
-      audio.hat(baseAt + (b + 1.75) * beatSec, 0.4);
-      audio.hat(baseAt + (b + 2.5) * beatSec, 0.65, true);
-      audio.hat(baseAt + (b + 3.5) * beatSec, 0.6, true);
-    }
-  };
-
-  // Intro: the famous tom fill, four bars of the groove, then the fill again.
-  for (const [beat, frequency, velocity] of TOM_FILL) {
-    audio.tom(introAt + beat * beatSec, frequency, velocity);
-  }
-  scheduleGroove(introAt, 2.5, 4);
-  audio.crash(introAt + 2.5 * beatSec, 0.7);
-
-  for (const [beat, midi, length] of EGG_INTRO_BASS) {
-    audio.playBass(
-      midi,
-      introAt + (2.5 + beat) * beatSec,
-      length * beatSec,
-      0.95,
-    );
-  }
-
-  for (const [beat, midis, length] of EGG_INTRO_CHORDS) {
-    audio.playChord(
-      midis,
-      introAt + (2.5 + beat) * beatSec,
-      length * beatSec,
-      0.55,
-    );
-  }
-
-  for (const [beat, frequency, velocity] of TOM_FILL) {
-    audio.tom(introAt + (18.5 + beat) * beatSec, frequency, velocity);
-  }
-
-  // Chorus: lead, bass, chords and the ten-bar groove.
-  for (const [beat, noteIndex, length] of EGG_LEAD) {
-    const note = NOTES[noteIndex];
-    if (!note) continue;
+  for (const [at, midi, length, velocity] of SONG_LEAD) {
     audio.playLead(
-      note.frequency,
-      chorusAt + beat * beatSec,
+      midiHz(midi),
+      startAt + at * beatSec,
       length * beatSec,
-      0.9,
+      velocity,
     );
   }
 
-  for (const [beat, midi, length] of EGG_BASS) {
-    audio.playBass(midi, chorusAt + beat * beatSec, length * beatSec, 0.95);
+  for (const [at, midi, length, velocity] of SONG_BASS) {
+    audio.playBass(midi, startAt + at * beatSec, length * beatSec, velocity);
   }
 
-  for (const [beat, midis, length] of EGG_CHORDS) {
-    audio.playChord(midis, chorusAt + beat * beatSec, length * beatSec, 0.55);
+  for (const [at, midis, length, velocity] of SONG_PIANO) {
+    audio.playPiano(
+      midis,
+      startAt + at * beatSec,
+      length * beatSec,
+      velocity * 0.65,
+    );
   }
 
-  scheduleGroove(chorusAt, 0, EGG_BARS);
+  for (const [at, midi, length, velocity] of SONG_STRINGS) {
+    const time = startAt + at * beatSec;
+    if (at < 35) {
+      // The intro's high string line is the lead before the vocal enters.
+      // Drop it an octave so it reads as a synth line rather than a whistle.
+      audio.playLead(
+        midiHz(midi - 12),
+        time,
+        length * beatSec,
+        velocity * 0.55,
+      );
+    } else {
+      audio.playChord([midi], time, length * beatSec, velocity * 0.35);
+    }
+  }
 
-  audio.crash(chorusAt, 0.9);
-  audio.crash(chorusAt + 24 * beatSec, 0.5);
-  audio.crash(chorusAt + 38.5 * beatSec, 0.6);
+  for (const [at, midi, length, velocity] of SONG_HORN) {
+    audio.playChord(
+      [midi],
+      startAt + at * beatSec,
+      length * beatSec,
+      velocity * (at < 35 ? 0.5 : 0.25),
+    );
+  }
 
-  for (const [beat, noteIndex, length] of EGG_LEAD) {
-    const atMs = EGG_START_DELAY + (EGG_INTRO_BEATS + beat) * EGG_BEAT_MS;
+  for (const [at, kind, frequency, velocity] of SONG_DRUMS) {
+    const time = startAt + at * beatSec;
+    switch (kind) {
+      case "kick":
+        audio.kick(time, velocity);
+        break;
+      case "snare":
+        audio.snare(time, velocity);
+        break;
+      case "hat":
+        audio.hat(time, velocity * 0.85);
+        break;
+      case "openhat":
+        audio.hat(time, velocity * 0.85, true);
+        break;
+      case "tom":
+        audio.tom(time, frequency, velocity);
+        break;
+      case "crash":
+        audio.crash(time, velocity);
+        break;
+    }
+  }
+
+  const keybedOffsets = [0, 2, 4, 5, 7, 9, 11, 12];
+  for (const [at, midi, length] of SONG_LEAD) {
+    // The lead is in A-flat; shift it to the C keybed for the visual only.
+    const noteIndex = keybedOffsets.indexOf(midi - 8 - 48);
+    if (noteIndex < 0 || noteIndex >= KEYBED_SIZE) continue;
+    const atMs = EGG_START_DELAY + at * EGG_BEAT_MS;
     const lengthMs = Math.max(110, length * EGG_BEAT_MS);
     eggTimers.push(
       window.setTimeout(() => {
@@ -979,7 +743,7 @@ function stopEgg(): void {
     noteReadout.classList.remove("is-live");
   }
 
-  syncPlayingState();
+  setDemoUi(false);
 }
 
 let brandTaps = 0;

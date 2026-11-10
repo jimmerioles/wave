@@ -50,11 +50,12 @@ The master output is intentionally low (0.2) and compressed.
 ## Easter egg
 
 Triple-tap the wave mark, or enter the Konami code
-(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A 31-second, 118 BPM synth-pop
-edit plays — the tom-fill intro, four bars of the groove, then the full chorus
-with bright lead, syncopated synth bass, drum machine and chord bed — and the
-stage then returns to the current preset. If sound is off, the gag is
-visual-only. `Esc` stops it. The About dialog has a small hint.
+(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A ~1:22, 113 BPM synth-pop edit in
+the original A-flat key plays: the tom-fill intro, verse 1, pre-chorus and the
+first chorus, with a bright lead, synth bass, piano, strings, horn and drum
+machine. The demo button becomes a stop/progress control while it plays; `Esc`
+also stops it and the stage returns to the current preset. If sound is off,
+the gag is visual-only. The About dialog has a small hint.
 
 ## What is implemented
 
@@ -86,13 +87,13 @@ visual-only. `Esc` stops it. The About dialog has a small hint.
   (D4/E4) internally for the chorus lift; they have no pads.
 
 **Easter egg**
-- A hidden 31-second synth-pop edit of “Never Gonna Give You Up” at 118 BPM:
-  the tom-fill intro, four bars of the groove, then the full chorus with a
-  bright detuned lead, syncopated synth bass, drum machine and chord pad, all
-  synthesized at runtime.
-- Triggered by triple-tapping the brand mark or the Konami code. It stops the
-  main demo, restores the stage, respects mute and reduced motion, and stops
-  on `Esc`.
+- A hidden ~1:22 synth-pop edit of “Never Gonna Give You Up” at 113 BPM:
+  the tom-fill intro, verse 1, pre-chorus and the first chorus, with a bright
+  detuned lead, synth bass, piano, strings, horn and drum machine, all
+  synthesized at runtime from reference note data.
+- Triggered by triple-tapping the brand mark or the Konami code. The demo
+  button becomes a stop/progress control during playback; `Esc` also stops it.
+  It stops the main demo, restores the stage, respects mute and reduced motion.
 
 **Page**
 - Typography: Space Grotesk + Instrument Serif accents + JetBrains Mono.

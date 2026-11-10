@@ -789,6 +789,49 @@ export class RickrollAudio {
     }
   }
 
+  playPiano(
+    midis: readonly number[],
+    at: number,
+    duration: number,
+    velocity = 0.7,
+  ): void {
+    const end = at + duration;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 4200;
+    filter.Q.value = 0.7;
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(0.12 * velocity, at + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.03 * velocity, at + 0.35);
+    gain.gain.setValueAtTime(
+      0.03 * velocity,
+      Math.max(at + 0.36, end - 0.01),
+    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, end + 0.22);
+    filter.connect(gain).connect(this.chordBus);
+
+    for (const midi of midis) {
+      const frequency = midiToHz(midi);
+      const body = this.ctx.createOscillator();
+      body.type = "triangle";
+      body.frequency.value = frequency;
+      const shine = this.ctx.createOscillator();
+      shine.type = "sine";
+      shine.frequency.value = frequency * 2;
+      const shineGain = this.ctx.createGain();
+      shineGain.gain.value = 0.18;
+      body.connect(filter);
+      shine.connect(shineGain).connect(filter);
+      body.start(at);
+      shine.start(at);
+      body.stop(end + 0.25);
+      shine.stop(end + 0.25);
+      this.sources.push(body, shine);
+    }
+  }
+
   kick(at: number, velocity = 1): void {
     const osc = this.ctx.createOscillator();
     osc.type = "sine";
