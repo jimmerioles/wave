@@ -518,8 +518,8 @@ muteButton.addEventListener("click", () => {
 
 const EGG_BPM = 118;
 const EGG_BEAT_MS = 60000 / EGG_BPM;
-const EGG_BEATS = 24;
-const EGG_BARS = 6;
+const EGG_BEATS = 40;
+const EGG_BARS = 10;
 const EGG_LENGTH = EGG_BEATS * EGG_BEAT_MS;
 /** Milliseconds between the trigger and the first sample. */
 const EGG_START_DELAY = 60;
@@ -579,6 +579,34 @@ const EGG_LEAD: readonly EggLead[] = [
   [21.5, N.E3, 0.92],
   [22.25, N.D3, 0.23],
   [22.5, N.C3, 1.42],
+
+  // "Never gonna make you cry"
+  [24.5, N.D3, 0.23],
+  [25, N.D3, 0.46],
+  [25.5, N.E3, 0.46],
+  [26, N.F3, 0.46],
+  [26.5, N.D3, 0.46],
+  [27, N.C3, 0.46],
+
+  // "Never gonna say goodbye"
+  [28, N.G3, 0.46],
+  [28.5, N.G3, 0.23],
+  [29, N.G3, 0.46],
+  [29.5, N.A3, 0.46],
+  [30, N.G3, 1.67],
+
+  // "Never gonna tell a lie and hurt you"
+  [32, N.F3, 2.42],
+  [34.5, N.G3, 0.46],
+  [35, N.A3, 0.46],
+  [35.5, N.F3, 0.46],
+  [36, N.G3, 0.23],
+  [36.5, N.G3, 0.23],
+  [37, N.G3, 0.46],
+  [37.5, N.A3, 0.46],
+  [38, N.G3, 0.46],
+  [38.5, N.C3, 0.46],
+  [39, N.C3, 0.92],
 ];
 
 const EGG_BASS: readonly EggBass[] = [
@@ -633,6 +661,41 @@ const EGG_BASS: readonly EggBass[] = [
   [21.5, BASS_MIDI.E2, 0.23],
   [23.5, BASS_MIDI.A1, 0.23],
   [23.75, BASS_MIDI.C2, 0.23],
+  [24, BASS_MIDI.D2, 0.23],
+  [24.5, BASS_MIDI.D2, 0.23],
+  [24.75, BASS_MIDI.D2, 0.23],
+  [25.25, BASS_MIDI.F2, 0.23],
+  [25.5, BASS_MIDI.E2, 0.23],
+  [26, BASS_MIDI.C2, 0.5],
+  [26.5, BASS_MIDI.D2, 0.23],
+  [27.5, BASS_MIDI.D2, 0.23],
+  [27.75, BASS_MIDI.D2, 0.23],
+  [28, BASS_MIDI.G1, 0.23],
+  [28.5, BASS_MIDI.G1, 0.23],
+  [28.75, BASS_MIDI.G1, 0.23],
+  [29.25, BASS_MIDI.G1, 0.23],
+  [29.5, BASS_MIDI.C2, 0.23],
+  [30.5, BASS_MIDI.C2, 0.23],
+  [30.75, BASS_MIDI.C2, 0.23],
+  [31, BASS_MIDI.C2, 0.23],
+  [31.5, BASS_MIDI.A1, 0.23],
+  [31.75, BASS_MIDI.C2, 0.23],
+  [32, BASS_MIDI.D2, 0.23],
+  [32.5, BASS_MIDI.D2, 0.23],
+  [32.75, BASS_MIDI.D2, 0.23],
+  [33.25, BASS_MIDI.F2, 0.23],
+  [33.5, BASS_MIDI.E2, 0.23],
+  [34, BASS_MIDI.C2, 0.5],
+  [34.5, BASS_MIDI.D2, 0.23],
+  [35.5, BASS_MIDI.A1, 0.23],
+  [35.75, BASS_MIDI.C2, 0.23],
+  [36, BASS_MIDI.D2, 0.23],
+  [36.5, BASS_MIDI.C2, 0.23],
+  [36.75, BASS_MIDI.D2, 0.23],
+  [37.25, BASS_MIDI.F2, 0.23],
+  [37.5, BASS_MIDI.E2, 0.23],
+  [39.5, BASS_MIDI.A1, 0.23],
+  [39.75, BASS_MIDI.C2, 0.23],
 ];
 
 const EGG_CHORDS: readonly EggChord[] = [
@@ -644,6 +707,11 @@ const EGG_CHORDS: readonly EggChord[] = [
   [13.5, [60, 64, 67], 2.5],
   [16, [58, 62, 65, 69], 4],
   [20, [60, 64, 67], 4],
+  [24, [58, 62, 65, 69], 4],
+  [28, [58, 62, 65, 69], 1.5],
+  [29.5, [60, 64, 67], 2.5],
+  [32, [58, 62, 65, 69], 4],
+  [36, [57, 60, 64, 67], 4],
 ];
 
 let eggTimers: number[] = [];
@@ -746,7 +814,8 @@ function startEgg(): void {
   }
 
   audio.crash(startAt, 0.9);
-  audio.crash(startAt + 22 * beatSec, 0.6);
+  audio.crash(startAt + 24 * beatSec, 0.5);
+  audio.crash(startAt + 38.5 * beatSec, 0.6);
 
   for (const [beat, noteIndex, length] of EGG_LEAD) {
     const atMs = EGG_START_DELAY + beat * EGG_BEAT_MS;
