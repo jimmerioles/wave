@@ -47,6 +47,8 @@ npm run preview   # serve the production build at /wave/
 - **Play the chorus** performs an arrangement of “Goodness of God” at the
   current tempo. The demo adds two high notes above the keybed for the chorus
   lift. `Esc` stops it early.
+- **Rec** records the master mix into a take. Click it again to stop; the take
+  dialog previews the clip and offers a download. `Esc` also stops a recording.
 - **Sound on** mutes and unmutes. The visualizer keeps reacting while muted.
 - **About** opens a short prototype note and the demo credit.
 
@@ -103,6 +105,15 @@ the gag is visual-only. The About dialog has a small hint.
 - The demo uses the same tempo clock: changing tempo before pressing play
   retimes the whole chorus.
 
+**Recording**
+- `MediaRecorder` taps the master bus before the mute gain, so a take can be
+  captured with the speakers quiet.
+- A finished take opens in a dialog with an audio preview, duration, file size,
+  format and a download link. Takes are capped at three minutes and live only
+  in the tab until discarded or replaced.
+- Downloads use the browser's preferred recording format (WebM/Opus on
+  Chromium and Firefox, M4A/AAC where that is the available option).
+
 **Easter egg**
 - A hidden ~1:22 synth-pop edit of “Never Gonna Give You Up” at 113 BPM:
   the tom-fill intro, verse 1, pre-chorus and the first chorus, with a bright
@@ -136,7 +147,7 @@ src/style.css     layout, identity, responsive + reduced-motion styles
 src/audio.ts      Web Audio graph, presets, voices, note helpers
 src/arp.ts        lookahead arpeggiator scheduler and pattern logic
 src/orb.ts        Canvas 2D visualizer and particle system
-src/main.ts       pad/keyboard input, preset + slider wiring, demo, lifecycle
+src/main.ts       input, presets, recording, demo, lifecycle
 CONCEPT.md        original brief
 ```
 
@@ -146,15 +157,13 @@ synthesized at runtime.
 
 ## Roadmap
 
-Four candidate next passes, roughly in order of leverage:
+Three candidate next passes, roughly in order of leverage:
 
-1. **Record & share a loop.** Record the master output with `MediaRecorder`,
-   preview the take, and download a shareable WebM/WAV clip.
-2. **Sound design pass.** Add a reverb, a couple more presets, and persist the
+1. **Sound design pass.** Add a reverb, a couple more presets, and persist the
    chosen preset, filter, echo and arp settings in `localStorage`.
-3. **Visual polish.** An oscilloscope mode, per-preset motion signatures,
+2. **Visual polish.** An oscilloscope mode, per-preset motion signatures,
    pointer glissando across pads, and further mobile layout refinements.
-4. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
+3. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
    the existing engine and keybed.
 
 ## Rough edges
@@ -164,6 +173,8 @@ Four candidate next passes, roughly in order of leverage:
 - The keybed is one octave. The demo reaches two notes above it internally, but
   those notes are not playable from the pads.
 - The arp is monophonic per step and has no swing or per-step editing yet.
+- Recording uses the browser's `MediaRecorder` container; there is no WAV
+  export or server-side sharing. Takes are session-only.
 - The circular spectrum maps lower frequencies to more ticks for looks, not
   scientific accuracy.
 - The synth has been built and interaction-tested headlessly; the audio graph

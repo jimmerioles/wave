@@ -48,6 +48,16 @@ const delay = must<HTMLInputElement>("#delay");
 const delayOut = must<HTMLOutputElement>("#delay-out");
 const muteButton = must<HTMLButtonElement>("#mute");
 const muteLabel = must<HTMLElement>("#mute-label");
+const recordButton = must<HTMLButtonElement>("#record");
+const recordLabel = must<HTMLElement>("#record-label");
+const takeButton = must<HTMLButtonElement>("#take");
+const takeLabel = must<HTMLElement>("#take-label");
+const takeDialog = must<HTMLDialogElement>("#take-dialog");
+const takeClose = must<HTMLButtonElement>("#take-close");
+const takeMeta = must<HTMLElement>("#take-meta");
+const takeAudio = must<HTMLAudioElement>("#take-audio");
+const takeDownload = must<HTMLAnchorElement>("#take-download");
+const takeDiscard = must<HTMLButtonElement>("#take-discard");
 const demoButton = must<HTMLButtonElement>("#demo");
 const demoLabel = must<HTMLElement>("#demo-label");
 const demoSub = must<HTMLElement>("#demo-sub");
@@ -95,6 +105,18 @@ let arpStepNote = -1;
 let arpStepTimer: number | null = null;
 let arpChord: number[] = [];
 let tempo = 63;
+interface RecordingSession {
+  recorder: MediaRecorder;
+  chunks: BlobPart[];
+  startedAt: number;
+  stoppedAt: number | null;
+  mimeType: string;
+}
+let recording: RecordingSession | null = null;
+let recordTicker: number | null = null;
+let recordLimitTimer: number | null = null;
+let takeUrl: string | null = null;
+let takeDuration = 0;
 
 function isUserSource(source: string): boolean {
   return !source.startsWith("demo:");
@@ -797,6 +819,227 @@ muteButton.addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------------
+   Recording: capture the master mix into a shareable take
+   ------------------------------------------------------------------------- */
+
+const RECORD_LIMIT_MS = 3 * 60 * 1000;
+
+function formatClock(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+}
+
+function pickRecordMime(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+  ];
+  for (const type of candidates) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+}
+
+function mimeLabel(mime: string): string {
+  if (mime.includes("mp4")) return "M4A/AAC";
+  if (mime.includes("ogg")) return "Ogg/Opus";
+  if (mime.includes("webm")) return "WebM/Opus";
+  return "Audio";
+}
+
+function extensionForMime(mime: string): string {
+  if (mime.includes("mp4")) return "m4a";
+  if (mime.includes("ogg")) return "ogg";
+  return "webm";
+}
+
+function setRecordingUi(active: boolean): void {
+  recordButton.setAttribute("aria-pressed", String(active));
+  recordButton.setAttribute(
+    "aria-label",
+    active ? "Stop recording" : "Start recording",
+  );
+  recordLabel.textContent = active ? "0:00" : "Rec";
+  document.body.classList.toggle("is-recording", active);
+}
+
+function discardTake(): void {
+  if (takeUrl) {
+    URL.revokeObjectURL(takeUrl);
+    takeUrl = null;
+  }
+  takeDuration = 0;
+  takeAudio.pause();
+  takeAudio.removeAttribute("src");
+  takeAudio.load();
+  takeDownload.removeAttribute("href");
+  takeButton.hidden = true;
+  if (takeDialog.open) takeDialog.close();
+}
+
+function finishRecording(session: RecordingSession): void {
+  if (recording !== session) return;
+  recording = null;
+  setRecordingUi(false);
+
+  const blob = new Blob(session.chunks, {
+    type: session.mimeType || "audio/webm",
+  });
+  if (blob.size === 0) {
+    setEggToast("nothing recorded — try again", true, 3200);
+    return;
+  }
+
+  discardTake();
+  const endedAt = session.stoppedAt ?? performance.now();
+  takeDuration = (endedAt - session.startedAt) / 1000;
+  takeUrl = URL.createObjectURL(blob);
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const extension = extensionForMime(session.mimeType);
+  takeAudio.src = takeUrl;
+  takeAudio.load();
+  takeMeta.textContent = `${formatClock(takeDuration)} · ${formatBytes(
+    blob.size,
+  )} · ${mimeLabel(session.mimeType)}`;
+  takeDownload.href = takeUrl;
+  takeDownload.download = `wave-take-${stamp}.${extension}`;
+  takeLabel.textContent = formatClock(takeDuration);
+  takeButton.setAttribute(
+    "aria-label",
+    `Open take, ${formatClock(takeDuration)}`,
+  );
+  takeButton.hidden = false;
+  takeDialog.showModal();
+}
+
+function startRecording(): void {
+  if (recording) return;
+  if (typeof MediaRecorder === "undefined") {
+    setEggToast("recording is not supported here", true, 3600);
+    return;
+  }
+
+  const stream = engine.createRecordingStream();
+  if (!stream) {
+    setEggToast("recording is not supported here", true, 3600);
+    return;
+  }
+
+  const mimeType = pickRecordMime();
+  let mediaRecorder: MediaRecorder;
+  try {
+    mediaRecorder = new MediaRecorder(
+      stream,
+      mimeType ? { mimeType } : undefined,
+    );
+  } catch {
+    setEggToast("could not start the recorder", true, 3600);
+    return;
+  }
+
+  discardTake();
+
+  const session: RecordingSession = {
+    recorder: mediaRecorder,
+    chunks: [],
+    startedAt: performance.now(),
+    stoppedAt: null,
+    mimeType: mediaRecorder.mimeType || mimeType,
+  };
+  recording = session;
+
+  mediaRecorder.ondataavailable = (event) => {
+    if (event.data.size > 0) session.chunks.push(event.data);
+  };
+  mediaRecorder.onerror = () => {
+    if (recording !== session) return;
+    recording = null;
+    setRecordingUi(false);
+    if (recordTicker !== null) {
+      clearInterval(recordTicker);
+      recordTicker = null;
+    }
+    if (recordLimitTimer !== null) {
+      clearTimeout(recordLimitTimer);
+      recordLimitTimer = null;
+    }
+    setEggToast("recording stopped unexpectedly", true, 3600);
+  };
+  mediaRecorder.onstop = () => finishRecording(session);
+
+  try {
+    mediaRecorder.start(250);
+  } catch {
+    recording = null;
+    setRecordingUi(false);
+    setEggToast("could not start the recorder", true, 3600);
+    return;
+  }
+
+  setRecordingUi(true);
+  recordTicker = window.setInterval(() => {
+    const elapsed = (performance.now() - session.startedAt) / 1000;
+    recordLabel.textContent = formatClock(elapsed);
+    recordButton.setAttribute(
+      "aria-label",
+      `Stop recording, ${formatClock(elapsed)}`,
+    );
+  }, 250);
+  recordLimitTimer = window.setTimeout(stopRecording, RECORD_LIMIT_MS);
+}
+
+function stopRecording(): void {
+  if (!recording) return;
+  if (recordTicker !== null) {
+    clearInterval(recordTicker);
+    recordTicker = null;
+  }
+  if (recordLimitTimer !== null) {
+    clearTimeout(recordLimitTimer);
+    recordLimitTimer = null;
+  }
+
+  const session = recording;
+  if (session.stoppedAt === null) session.stoppedAt = performance.now();
+  setRecordingUi(false);
+
+  if (session.recorder.state !== "inactive") {
+    session.recorder.stop();
+  } else {
+    finishRecording(session);
+  }
+}
+
+recordButton.addEventListener("click", () => {
+  if (recording && recording.recorder.state !== "inactive") {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+});
+
+takeButton.addEventListener("click", () => {
+  if (takeUrl && !takeDialog.open) takeDialog.showModal();
+});
+
+takeClose.addEventListener("click", () => takeDialog.close());
+takeDialog.addEventListener("click", (event) => {
+  if (event.target === takeDialog) takeDialog.close();
+});
+takeDiscard.addEventListener("click", discardTake);
+
+/* -------------------------------------------------------------------------
    Easter egg: the opening of "Never Gonna Give You Up"
 
    Intro, verse 1, pre-chorus and the first chorus, extracted from a reference
@@ -1190,12 +1433,13 @@ function trackKonami(event: KeyboardEvent): boolean {
 }
 
 window.addEventListener("keydown", (event) => {
-  if (about.open) {
+  if (about.open || takeDialog.open) {
     konamiIndex = 0;
     return;
   }
 
   if (event.key === "Escape") {
+    if (recording) stopRecording();
     if (eggPlaying) {
       stopEgg();
       return;
@@ -1306,6 +1550,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     stopDemo();
     stopEgg();
+    stopRecording();
     releaseAll();
     void engine.suspend();
   } else {

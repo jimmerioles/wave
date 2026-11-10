@@ -174,6 +174,7 @@ export class SynthEngine {
   private delayWet: GainNode | null = null;
   private master: GainNode | null = null;
   private muteGain: GainNode | null = null;
+  private recordDestination: MediaStreamAudioDestinationNode | null = null;
 
   private voices = new Map<number, Voice>();
   private preset: Preset = PRESETS.bloom;
@@ -235,6 +236,25 @@ export class SynthEngine {
     if (ctx && gain) {
       gain.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.02);
     }
+  }
+
+  /**
+   * A live stream of the master mix for MediaRecorder. The tap is before the
+   * mute gain, so a take can be captured while the speakers stay quiet.
+   */
+  createRecordingStream(): MediaStream | null {
+    this.ensure();
+    const ctx = this.context;
+    const master = this.master;
+    if (!ctx || !master) return null;
+
+    if (!this.recordDestination) {
+      if (typeof ctx.createMediaStreamDestination !== "function") return null;
+      this.recordDestination = ctx.createMediaStreamDestination();
+      master.connect(this.recordDestination);
+    }
+
+    return this.recordDestination.stream;
   }
 
   setCutoff(sliderValue: number): void {

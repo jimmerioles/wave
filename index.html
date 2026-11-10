@@ -48,6 +48,26 @@
             About
           </button>
           <button
+            class="record"
+            id="record"
+            type="button"
+            aria-pressed="false"
+            aria-label="Start recording"
+          >
+            <span class="record-dot" aria-hidden="true"></span>
+            <span id="record-label">Rec</span>
+          </button>
+          <button
+            class="take"
+            id="take"
+            type="button"
+            aria-label="Open the last take"
+            hidden
+          >
+            <span class="take-mark" aria-hidden="true"></span>
+            <span id="take-label">Take</span>
+          </button>
+          <button
             class="mute"
             id="mute"
             type="button"
@@ -370,6 +390,41 @@
           writers and publishers. Easter egg: “Never Gonna Give You Up”
           performed by Rick Astley, written by Mike Stock, Matt Aitken and Pete
           Waterman.
+        </p>
+      </div>
+    </dialog>
+
+    <dialog class="about take-dialog" id="take-dialog" aria-labelledby="take-title">
+      <div class="about-panel take-panel">
+        <button
+          class="about-close"
+          id="take-close"
+          type="button"
+          aria-label="Close take"
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </button>
+
+        <p class="eyebrow">
+          <span class="status-dot" aria-hidden="true"></span>Take ready
+        </p>
+        <h2 id="take-title">A little <em>something.</em></h2>
+        <p class="take-meta" id="take-meta">0:00 · WebM</p>
+
+        <audio class="take-audio" id="take-audio" controls preload="metadata"></audio>
+
+        <div class="take-actions">
+          <a class="take-download" id="take-download" download>Download take</a>
+          <button class="take-discard" id="take-discard" type="button">
+            Discard
+          </button>
+        </div>
+
+        <p class="about-foot take-hint">
+          Captured from the master mix, before mute. The take lives in this tab
+          until you discard it or record again.
         </p>
       </div>
     </dialog>
