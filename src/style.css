@@ -223,6 +223,7 @@ kbd {
   gap: 11px;
   text-decoration: none;
   outline: none;
+  touch-action: manipulation;
 }
 
 .brand:focus-visible {
@@ -635,6 +636,42 @@ kbd {
   display: block;
   width: 100%;
   height: 100%;
+  transition: filter 0.45s ease;
+}
+
+.is-rolled #orb {
+  filter: hue-rotate(135deg) saturate(1.18);
+}
+
+.egg-toast {
+  position: absolute;
+  top: 19%;
+  left: 50%;
+  z-index: 5;
+  margin: 0;
+  padding: 7px 13px;
+  border: 1px solid rgba(109, 243, 205, 0.3);
+  border-radius: 999px;
+  background: rgba(6, 10, 21, 0.82);
+  color: var(--mint);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s var(--ease);
+}
+
+.egg-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .stage-top {
@@ -1627,8 +1664,18 @@ input[type="range"]:focus-visible {
   font-size: 7.5px;
 }
 
+.about .about-secret {
+  margin: 14px 0 0;
+  color: var(--mint);
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
 .about .about-credit {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   color: var(--muted-2);
   font-family: var(--mono);
   font-size: 8px;
@@ -1862,6 +1909,12 @@ input[type="range"]:focus-visible {
     right: 1px;
     bottom: -1px;
     gap: 10px;
+  }
+
+  .egg-toast {
+    top: 17%;
+    padding: 6px 10px;
+    font-size: 7.5px;
   }
 
   .readout-label,

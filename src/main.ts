@@ -41,6 +41,8 @@ const presetButtons = Array.from(
 const about = must<HTMLDialogElement>("#about");
 const aboutOpen = must<HTMLButtonElement>("#about-open");
 const aboutClose = must<HTMLButtonElement>("#about-close");
+const brand = must<HTMLAnchorElement>(".brand");
+const eggToast = must<HTMLElement>("#egg-toast");
 
 const NOTE_ACCENTS = [
   "#ff6a4d",
@@ -137,7 +139,7 @@ function buildKeybed(): void {
 function syncPlayingState(): void {
   document.body.classList.toggle(
     "is-playing",
-    activeSources.size > 0 || demoPlaying,
+    activeSources.size > 0 || demoPlaying || eggPlaying,
   );
 }
 
@@ -418,6 +420,7 @@ function setDemoUi(playing: boolean): void {
 }
 
 function startDemo(): void {
+  if (eggPlaying) stopEgg();
   engine.ensure();
 
   // Reset the progress bar so each run starts from the left.
@@ -503,6 +506,175 @@ muteButton.addEventListener("click", () => {
 });
 
 /* -------------------------------------------------------------------------
+   Easter egg: a short synth quote of "Never Gonna Give You Up"
+
+   The melody is transposed to C so it fits the keybed; E4 is one of the
+   demo-only notes. It stops the main demo, borrows the stage for 16 beats at
+   113 BPM, then puts everything back. Triggered by triple-tapping the brand
+   or entering the Konami code.
+   ------------------------------------------------------------------------- */
+
+const EGG_BPM = 113;
+const EGG_BEAT_MS = 60000 / EGG_BPM;
+const EGG_BEATS = 16;
+const EGG_LENGTH = EGG_BEATS * EGG_BEAT_MS;
+const EGG_RELEASE = 0.22;
+
+const EGG_EVENTS: readonly DemoEvent[] = [
+  // "Never gonna give you up"
+  [0, N.G3, 0.4],
+  [0.5, N.A3, 0.4],
+  [1, N.C4, 0.4],
+  [1.5, N.A3, 0.4],
+  [2, N.E4, 0.4],
+  [2.5, N.E4, 0.4],
+  [3, N.D4, 1.0],
+
+  // "Never gonna let you down"
+  [4, N.G3, 0.4],
+  [4.5, N.A3, 0.4],
+  [5, N.C4, 0.4],
+  [5.5, N.A3, 0.4],
+  [6, N.D4, 0.4],
+  [6.5, N.D4, 0.4],
+  [7, N.C4, 0.25],
+  [7.25, N.B3, 0.25],
+  [7.5, N.A3, 0.5],
+
+  // "Never gonna run around and desert you"
+  [8, N.G3, 0.4],
+  [8.5, N.A3, 0.4],
+  [9, N.C4, 0.4],
+  [9.5, N.A3, 0.4],
+  [10, N.C4, 0.4],
+  [10.5, N.D4, 0.4],
+  [11, N.B3, 0.4],
+  [11.5, N.G3, 0.4],
+  [12, N.G3, 0.4],
+  [12.5, N.D4, 0.4],
+  [13, N.C4, 3.0],
+
+  // A small C-major cushion under the last note.
+  [13, N.C3, 3.0, 0.46],
+  [13, N.E3, 3.0, 0.44],
+];
+
+let eggTimers: number[] = [];
+let eggPlaying = false;
+let eggRun = 0;
+let eggToastTimer: number | null = null;
+
+function setEggToast(text: string, visible: boolean): void {
+  eggToast.textContent = text;
+  eggToast.classList.toggle("is-visible", visible);
+
+  if (eggToastTimer !== null) {
+    clearTimeout(eggToastTimer);
+    eggToastTimer = null;
+  }
+
+  if (visible) {
+    eggToastTimer = window.setTimeout(() => {
+      eggToast.classList.remove("is-visible");
+      eggToastTimer = null;
+    }, 3200);
+  }
+}
+
+function startEgg(): void {
+  if (eggPlaying) return;
+  if (demoPlaying) stopDemo();
+
+  engine.ensure();
+  eggRun++;
+  const run = eggRun;
+  eggPlaying = true;
+
+  document.body.classList.add("is-rolled");
+  stagePreset.textContent = "Rolled";
+  stagePreset.dataset.preset = "glass";
+  document.body.dataset.preset = "glass";
+  setEggToast(
+    muted ? "you just got wave-rolled (silently)" : "you just got wave-rolled",
+    true,
+  );
+  syncPlayingState();
+
+  // Bass notes first on shared beats so the readout features the melody.
+  const events = [...EGG_EVENTS].sort(
+    (a, b) => a[0] - b[0] || (a[3] ?? 0.7) - (b[3] ?? 0.7),
+  );
+
+  events.forEach(([start, noteIndex, length, velocity], index) => {
+    const source = `egg:${run}:${index}`;
+
+    eggTimers.push(
+      window.setTimeout(() => {
+        if (!eggPlaying || run !== eggRun) return;
+        press(noteIndex, source, velocity ?? 0.7);
+      }, start * EGG_BEAT_MS + 40),
+    );
+
+    eggTimers.push(
+      window.setTimeout(
+        () => release(source, EGG_RELEASE),
+        (start + length) * EGG_BEAT_MS + 40,
+      ),
+    );
+  });
+
+  eggTimers.push(
+    window.setTimeout(() => {
+      if (run === eggRun) stopEgg();
+    }, EGG_LENGTH + 900),
+  );
+}
+
+function stopEgg(): void {
+  if (!eggPlaying && eggTimers.length === 0) return;
+
+  eggRun++;
+  eggPlaying = false;
+  for (const timer of eggTimers) clearTimeout(timer);
+  eggTimers = [];
+
+  for (const source of [...activeSources.keys()]) {
+    if (source.startsWith("egg:")) release(source);
+  }
+
+  document.body.classList.remove("is-rolled");
+  stagePreset.textContent = PRESETS[currentPreset].name;
+  stagePreset.dataset.preset = currentPreset;
+  document.body.dataset.preset = currentPreset;
+  setEggToast("", false);
+  syncPlayingState();
+}
+
+let brandTaps = 0;
+let brandTapTimer: number | null = null;
+
+brand.addEventListener("click", (event) => {
+  brandTaps++;
+  if (brandTapTimer !== null) {
+    clearTimeout(brandTapTimer);
+    brandTapTimer = null;
+  }
+
+  if (brandTaps >= 3) {
+    event.preventDefault();
+    brandTaps = 0;
+    brand.blur();
+    startEgg();
+    return;
+  }
+
+  brandTapTimer = window.setTimeout(() => {
+    brandTaps = 0;
+    brandTapTimer = null;
+  }, 800);
+});
+
+/* -------------------------------------------------------------------------
    About dialog
    ------------------------------------------------------------------------- */
 
@@ -533,6 +705,21 @@ const KEY_CODE_MAP: Record<string, number> = {
   KeyK: 7,
 };
 
+const KONAMI = [
+  "ArrowUp",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "KeyB",
+  "KeyA",
+] as const;
+
+let konamiIndex = 0;
+
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   return Boolean(
@@ -542,20 +729,69 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   );
 }
 
-window.addEventListener("keydown", (event) => {
-  if (about.open) return;
+function trackKonami(event: KeyboardEvent): boolean {
+  if (event.code === KONAMI[konamiIndex]) {
+    konamiIndex++;
+    if (konamiIndex === KONAMI.length) {
+      konamiIndex = 0;
+      startEgg();
+      return true;
+    }
+  } else {
+    konamiIndex = event.code === KONAMI[0] ? 1 : 0;
+  }
 
-  if (event.key === "Escape" && demoPlaying) {
-    stopDemo();
+  return false;
+}
+
+window.addEventListener("keydown", (event) => {
+  if (about.open) {
+    konamiIndex = 0;
     return;
   }
 
-  if (event.metaKey || event.ctrlKey || event.altKey) return;
-  if (isInteractiveTarget(event.target)) return;
+  if (event.key === "Escape") {
+    if (eggPlaying) {
+      stopEgg();
+      return;
+    }
+    if (demoPlaying) {
+      stopDemo();
+      return;
+    }
+  }
+
+  if (event.metaKey || event.ctrlKey || event.altKey) {
+    konamiIndex = 0;
+    return;
+  }
+  if (event.repeat) return;
+
+  const target = event.target;
+  const targetIsRange =
+    target instanceof HTMLInputElement && target.type === "range";
+  const targetIsText =
+    target instanceof Element &&
+    Boolean(
+      target.closest(
+        "textarea, select, [contenteditable='true'], input:not([type='range'])",
+      ),
+    );
+
+  // Range inputs keep their arrow keys; text fields keep every key.
+  if (targetIsRange || targetIsText) {
+    konamiIndex = 0;
+    return;
+  }
+
+  // Buttons and links can still host the Konami code, even though they keep
+  // note keys from firing while focused.
+  if (trackKonami(event)) return;
+  if (isInteractiveTarget(target)) return;
 
   const noteIndex = KEY_CODE_MAP[event.code];
   if (noteIndex === undefined) return;
-  if (event.repeat || heldKeys.has(event.code)) return;
+  if (heldKeys.has(event.code)) return;
 
   event.preventDefault();
   heldKeys.add(event.code);
@@ -609,13 +845,16 @@ window.addEventListener("keydown", unlockAudio, {
 });
 
 window.addEventListener("blur", () => {
+  konamiIndex = 0;
   stopDemo();
+  stopEgg();
   releaseAll();
 });
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     stopDemo();
+    stopEgg();
     releaseAll();
     void engine.suspend();
   } else {

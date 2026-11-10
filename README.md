@@ -47,6 +47,14 @@ npm run preview   # serve the production build at /wave/
 Audio starts only after the first pointer or key gesture. Nothing autoplays.
 The master output is intentionally low (0.2) and compressed.
 
+## Easter egg
+
+Triple-tap the wave mark, or enter the Konami code
+(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A short 8.5-second synth quote of
+“Never Gonna Give You Up” plays, then the stage returns to the current preset.
+If sound is off, the gag is visual-only. `Esc` stops it. The About dialog has a
+small hint.
+
 ## What is implemented
 
 **Sound**
@@ -75,6 +83,13 @@ The master output is intentionally low (0.2) and compressed.
   bar plus eight chorus bars, melody and bass scheduled into the live synth.
 - The keybed exposes eight pads (C3–C4). The demo uses two extra high notes
   (D4/E4) internally for the chorus lift; they have no pads.
+
+**Easter egg**
+- A hidden 8.5-second synth quote of “Never Gonna Give You Up” at 113 BPM,
+  transposed to C and played through the same voices.
+- Triggered by triple-tapping the brand mark or the Konami code. It stops the
+  main demo, restores the stage, respects mute and reduced motion, and stops
+  on `Esc`.
 
 **Page**
 - Typography: Space Grotesk + Instrument Serif accents + JetBrains Mono.
@@ -136,3 +151,7 @@ Five candidate next passes, roughly in order of leverage:
 Ingram, Ben Fielding, Ed Cash and Brian Johnson. The demo is a short
 synthesized arrangement used for this prototype; all rights belong to the
 writers and publishers.
+
+“Never Gonna Give You Up” was performed by Rick Astley and written by Mike
+Stock, Matt Aitken and Pete Waterman. The easter egg is a short synthesized
+quote used for this prototype; all rights belong to the writers and publishers.
