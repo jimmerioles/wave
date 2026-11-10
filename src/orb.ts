@@ -66,7 +66,7 @@ interface Mote {
 }
 
 const TAU = Math.PI * 2;
-const MAX_PARTICLES = 150;
+const MAX_PARTICLES = 90;
 
 function rgba(color: RGB, alpha: number): string {
   return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
@@ -103,8 +103,8 @@ export class OrbScene {
 
   private timeData = new Uint8Array(2048);
   private freqData = new Uint8Array(1024);
-  private waveform = new Float32Array(128);
-  private ticks = new Float32Array(88);
+  private waveform = new Float32Array(96);
+  private ticks = new Float32Array(64);
 
   private targetLevel = 0;
   private targetBass = 0;
@@ -141,6 +141,8 @@ export class OrbScene {
 
   private raf = 0;
   private lastFrame = 0;
+  private frameCap = 1000 / 60;
+  private lowPower = false;
   private elapsed = 0;
   private lastMeterAt = 0;
   private reducedTimer: number | null = null;
@@ -191,6 +193,12 @@ export class OrbScene {
     if (!this.running) this.drawFrame(0, false);
   }
 
+  /** The easter egg runs long; halve the visual frame rate and effects. */
+  setLowPower(lowPower: boolean): void {
+    this.lowPower = lowPower;
+    this.frameCap = lowPower ? 1000 / 30 : 1000 / 60;
+  }
+
   setPointer(normalizedX: number, normalizedY: number): void {
     this.pointerTargetX = clamp(normalizedX, -1, 1);
     this.pointerTargetY = clamp(normalizedY, -1, 1);
@@ -205,7 +213,7 @@ export class OrbScene {
     const angle = -Math.PI / 2 + (noteIndex - 3.5) * 0.42;
     const ox = this.orbX + Math.cos(angle) * this.orbRadius * 0.92;
     const oy = this.orbY + Math.sin(angle) * this.orbRadius * 0.92;
-    const count = 26;
+    const count = 16;
 
     for (let i = 0; i < count; i++) {
       if (this.particles.length >= MAX_PARTICLES) break;
@@ -278,7 +286,13 @@ export class OrbScene {
   private frame = (now: number): void => {
     if (!this.running) return;
 
-    const dt = clamp((now - this.lastFrame) / 1000, 0.001, 0.05);
+    const delta = now - this.lastFrame;
+    if (delta < this.frameCap - 0.5) {
+      this.raf = requestAnimationFrame(this.frame);
+      return;
+    }
+
+    const dt = clamp(delta / 1000, 0.001, 0.05);
     this.lastFrame = now;
     this.elapsed += dt;
 
@@ -407,7 +421,7 @@ export class OrbScene {
     const rect = this.canvas.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) return;
 
-    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.dpr = Math.min(1.5, window.devicePixelRatio || 1);
     this.width = rect.width;
     this.height = rect.height;
     this.canvas.width = Math.round(rect.width * this.dpr);
@@ -523,6 +537,8 @@ export class OrbScene {
     radius: number,
     animated: boolean,
   ): void {
+    if (this.lowPower) return;
+
     const ctx = this.context;
     const { palette } = this;
 
@@ -542,20 +558,6 @@ export class OrbScene {
     ctx.fillRect(0, 0, this.width, this.height);
 
     if (!animated) return;
-
-    const low = ctx.createRadialGradient(
-      centerX,
-      centerY + radius * 1.15,
-      radius * 0.05,
-      centerX,
-      centerY + radius * 1.15,
-      radius * 2.1,
-    );
-    low.addColorStop(0, rgba(palette.accent, 0.065 + this.level * 0.045));
-    low.addColorStop(0.52, rgba(palette.secondary, 0.022));
-    low.addColorStop(1, rgba(palette.accent, 0));
-    ctx.fillStyle = low;
-    ctx.fillRect(0, 0, this.width, this.height);
   }
 
   private drawMotes(): void {
@@ -682,14 +684,14 @@ export class OrbScene {
     );
 
     // Horizontal solar bands, warped by the low end.
-    const bands = 23;
+    const bands = 14;
     for (let j = 0; j < bands; j++) {
       const y = centerY - radius + ((j + 0.5) / bands) * radius * 2;
       const drift = Math.sin(time * 0.34 + j * 0.6) * radius * 0.035;
       const warp = this.bass * Math.sin(time * 0.9 + j * 1.2) * radius * 0.05;
 
       ctx.beginPath();
-      for (let x = -radius; x <= radius; x += 6) {
+      for (let x = -radius; x <= radius; x += 9) {
         const wave =
           Math.sin((x / radius) * 2.4 + time * 0.55 + j * 0.52) *
           radius *
@@ -821,12 +823,12 @@ export class OrbScene {
     ring.addColorStop(0, rgba(palette.secondary, 0.92));
     ring.addColorStop(0.45, "rgba(255, 245, 230, 0.72)");
     ring.addColorStop(1, rgba(palette.accent, 0.85));
+    ctx.strokeStyle = rgba(palette.accent, 0.12);
+    ctx.lineWidth = 5;
+    ctx.stroke();
     ctx.strokeStyle = ring;
     ctx.lineWidth = 1.8;
-    ctx.shadowColor = rgba(palette.accent, 0.65);
-    ctx.shadowBlur = 14 + this.level * 12;
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
     // A quieter inner echo of the same signal.
     ctx.beginPath();
@@ -880,8 +882,6 @@ export class OrbScene {
       const alpha = clamp(particle.life / particle.maxLife, 0, 1);
       ctx.beginPath();
       ctx.fillStyle = rgba(particle.color, alpha * 0.85);
-      ctx.shadowColor = rgba(particle.color, alpha * 0.9);
-      ctx.shadowBlur = 10;
       ctx.arc(particle.x, particle.y, particle.size, 0, TAU);
       ctx.fill();
     }

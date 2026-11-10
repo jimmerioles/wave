@@ -610,6 +610,21 @@ export class RickrollAudio {
     this.noise = noise;
   }
 
+  private cleanup(
+    source: AudioScheduledSourceNode,
+    nodes: readonly AudioNode[],
+  ): void {
+    source.onended = () => {
+      for (const node of nodes) {
+        try {
+          node.disconnect();
+        } catch {
+          /* Already disconnected. */
+        }
+      }
+    };
+  }
+
   playLead(
     frequency: number,
     at: number,
@@ -643,8 +658,6 @@ export class RickrollAudio {
     presence.frequency.value = 2600;
     presence.Q.value = 1;
     presence.gain.value = 3;
-
-    // Lift the upper harmonics, where a synth lead actually cuts through.
     const bite = this.ctx.createBiquadFilter();
     bite.type = "highshelf";
     bite.frequency.value = 1600;
@@ -659,12 +672,6 @@ export class RickrollAudio {
     const square = this.ctx.createOscillator();
     square.type = "square";
     square.frequency.value = frequency * 2;
-    const octaveSaw = this.ctx.createOscillator();
-    octaveSaw.type = "sawtooth";
-    octaveSaw.frequency.value = frequency * 2;
-    const air = this.ctx.createOscillator();
-    air.type = "square";
-    air.frequency.value = frequency * 4;
 
     const sawGain = this.ctx.createGain();
     sawGain.gain.value = 0.55;
@@ -672,40 +679,34 @@ export class RickrollAudio {
     saw2Gain.gain.value = 0.45;
     const squareGain = this.ctx.createGain();
     squareGain.gain.value = 0.3;
-    const octaveGain = this.ctx.createGain();
-    octaveGain.gain.value = 0.2;
-    const airGain = this.ctx.createGain();
-    airGain.gain.value = 0.1;
 
     saw.connect(sawGain).connect(highpass);
     saw2.connect(saw2Gain).connect(highpass);
     square.connect(squareGain).connect(highpass);
-    octaveSaw.connect(octaveGain).connect(highpass);
-    air.connect(airGain).connect(highpass);
-
-    const leadAir = this.ctx.createBiquadFilter();
-    leadAir.type = "highshelf";
-    leadAir.frequency.value = 4000;
-    leadAir.gain.value = 3;
     highpass
       .connect(filter)
       .connect(presence)
       .connect(bite)
-      .connect(leadAir)
       .connect(gain)
       .connect(this.leadBus);
 
     saw.start(at);
     saw2.start(at);
     square.start(at);
-    octaveSaw.start(at);
-    air.start(at);
     saw.stop(end + 0.1);
     saw2.stop(end + 0.1);
     square.stop(end + 0.1);
-    octaveSaw.stop(end + 0.1);
-    air.stop(end + 0.1);
-    this.sources.push(saw, saw2, square, octaveSaw, air);
+    this.sources.push(saw, saw2, square);
+    this.cleanup(square, [
+      sawGain,
+      saw2Gain,
+      squareGain,
+      highpass,
+      filter,
+      presence,
+      bite,
+      gain,
+    ]);
   }
 
   playBass(midi: number, at: number, duration: number, velocity = 1): void {
@@ -730,7 +731,7 @@ export class RickrollAudio {
 
     const shaper = this.ctx.createWaveShaper();
     shaper.curve = makeSoftClipCurve(1.5);
-    shaper.oversample = "2x";
+    shaper.oversample = "none";
 
     const saw = this.ctx.createOscillator();
     saw.type = "sawtooth";
@@ -750,6 +751,7 @@ export class RickrollAudio {
     saw.stop(end + 0.08);
     square.stop(end + 0.08);
     this.sources.push(saw, square);
+    this.cleanup(square, [filter, shaper, gain, squareGain]);
   }
 
   playChord(
@@ -774,19 +776,20 @@ export class RickrollAudio {
     gain.gain.exponentialRampToValueAtTime(0.0001, end + 0.35);
     filter.connect(gain).connect(this.chordBus);
 
+    const oscillators: OscillatorNode[] = [];
     for (const midi of midis) {
-      const frequency = midiToHz(midi);
-      for (const detune of [-6, 6]) {
-        const osc = this.ctx.createOscillator();
-        osc.type = "sawtooth";
-        osc.frequency.value = frequency;
-        osc.detune.value = detune;
-        osc.connect(filter);
-        osc.start(at);
-        osc.stop(end + 0.4);
-        this.sources.push(osc);
-      }
+      const osc = this.ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = midiToHz(midi);
+      osc.connect(filter);
+      osc.start(at);
+      osc.stop(end + 0.4);
+      this.sources.push(osc);
+      oscillators.push(osc);
     }
+
+    const last = oscillators[oscillators.length - 1];
+    if (last) this.cleanup(last, [filter, gain]);
   }
 
   playPiano(
@@ -812,24 +815,20 @@ export class RickrollAudio {
     gain.gain.exponentialRampToValueAtTime(0.0001, end + 0.22);
     filter.connect(gain).connect(this.chordBus);
 
+    const bodies: OscillatorNode[] = [];
     for (const midi of midis) {
-      const frequency = midiToHz(midi);
       const body = this.ctx.createOscillator();
       body.type = "triangle";
-      body.frequency.value = frequency;
-      const shine = this.ctx.createOscillator();
-      shine.type = "sine";
-      shine.frequency.value = frequency * 2;
-      const shineGain = this.ctx.createGain();
-      shineGain.gain.value = 0.18;
+      body.frequency.value = midiToHz(midi);
       body.connect(filter);
-      shine.connect(shineGain).connect(filter);
       body.start(at);
-      shine.start(at);
       body.stop(end + 0.25);
-      shine.stop(end + 0.25);
-      this.sources.push(body, shine);
+      this.sources.push(body);
+      bodies.push(body);
     }
+
+    const last = bodies[bodies.length - 1];
+    if (last) this.cleanup(last, [filter, gain]);
   }
 
   kick(at: number, velocity = 1): void {
@@ -845,6 +844,7 @@ export class RickrollAudio {
     osc.start(at);
     osc.stop(at + 0.34);
     this.sources.push(osc);
+    this.cleanup(osc, [gain]);
 
     const click = this.noiseSource();
     const highpass = this.ctx.createBiquadFilter();
@@ -857,6 +857,7 @@ export class RickrollAudio {
     click.start(at);
     click.stop(at + 0.03);
     this.sources.push(click);
+    this.cleanup(click, [highpass, clickGain]);
   }
 
   tom(at: number, frequency: number, velocity = 0.8): void {
@@ -872,6 +873,7 @@ export class RickrollAudio {
     osc.start(at);
     osc.stop(at + 0.3);
     this.sources.push(osc);
+    this.cleanup(osc, [gain]);
   }
 
   snare(at: number, velocity = 1): void {
@@ -887,6 +889,7 @@ export class RickrollAudio {
     noise.start(at);
     noise.stop(at + 0.21);
     this.sources.push(noise);
+    this.cleanup(noise, [bandpass, noiseGain]);
 
     const body = this.ctx.createOscillator();
     body.type = "triangle";
@@ -898,44 +901,38 @@ export class RickrollAudio {
     body.start(at);
     body.stop(at + 0.13);
     this.sources.push(body);
+    this.cleanup(body, [bodyGain]);
 
-    for (const offset of [0, 0.012, 0.024]) {
-      const clap = this.noiseSource();
-      const highpass = this.ctx.createBiquadFilter();
-      highpass.type = "highpass";
-      highpass.frequency.value = 900;
-      const clapGain = this.ctx.createGain();
-      clapGain.gain.setValueAtTime(0.22 * velocity, at + offset);
-      clapGain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        at + offset + 0.05,
-      );
-      clap.connect(highpass).connect(clapGain).connect(this.drumBus);
-      clap.start(at + offset);
-      clap.stop(at + offset + 0.06);
-      this.sources.push(clap);
-    }
+    const clap = this.noiseSource();
+    const highpass = this.ctx.createBiquadFilter();
+    highpass.type = "highpass";
+    highpass.frequency.value = 900;
+    const clapGain = this.ctx.createGain();
+    clapGain.gain.setValueAtTime(0.22 * velocity, at + 0.012);
+    clapGain.gain.exponentialRampToValueAtTime(0.0001, at + 0.062);
+    clap.connect(highpass).connect(clapGain).connect(this.drumBus);
+    clap.start(at + 0.012);
+    clap.stop(at + 0.072);
+    this.sources.push(clap);
+    this.cleanup(clap, [highpass, clapGain]);
   }
 
   hat(at: number, velocity = 0.7, open = false): void {
     const noise = this.noiseSource();
     const highpass = this.ctx.createBiquadFilter();
     highpass.type = "highpass";
-    highpass.frequency.value = 6800;
-    const bandpass = this.ctx.createBiquadFilter();
-    bandpass.type = "bandpass";
-    bandpass.frequency.value = 9000;
-    bandpass.Q.value = 0.5;
+    highpass.frequency.value = 7000;
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.24 * velocity, at);
     gain.gain.exponentialRampToValueAtTime(
       0.0001,
       at + (open ? 0.2 : 0.045),
     );
-    noise.connect(highpass).connect(bandpass).connect(gain).connect(this.drumBus);
+    noise.connect(highpass).connect(gain).connect(this.drumBus);
     noise.start(at);
     noise.stop(at + (open ? 0.22 : 0.06));
     this.sources.push(noise);
+    this.cleanup(noise, [highpass, gain]);
   }
 
   crash(at: number, velocity = 0.8): void {
@@ -950,6 +947,7 @@ export class RickrollAudio {
     noise.start(at);
     noise.stop(at + 1.35);
     this.sources.push(noise);
+    this.cleanup(noise, [highpass, gain]);
   }
 
   stop(): void {
@@ -974,9 +972,9 @@ export class RickrollAudio {
       } catch {
         /* The graph is already gone. */
       }
+      this.sources = [];
     }, 250);
   }
-
   private noiseSource(): AudioBufferSourceNode {
     const source = this.ctx.createBufferSource();
     source.buffer = this.noise;

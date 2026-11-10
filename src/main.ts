@@ -596,6 +596,7 @@ function startEgg(): void {
   noteReadout.textContent = "♪";
   noteSub.textContent = "never gonna";
   noteReadout.classList.add("is-live");
+  orb.setLowPower(true);
 
   // Turn the demo button into the egg's stop/progress control.
   demoButton.classList.remove("is-playing");
@@ -761,7 +762,6 @@ function startEgg(): void {
         if (!eggPlaying || run !== eggRun) return;
         if (!isNoteHeldByUser(noteIndex)) {
           setPadState(noteIndex, true);
-          orb.burst(noteIndex);
         }
         eggTimers.push(
           window.setTimeout(() => {
@@ -778,7 +778,7 @@ function startEgg(): void {
   eggTimers.push(
     window.setTimeout(() => {
       if (run === eggRun) stopEgg();
-    }, EGG_LENGTH + 1500),
+    }, EGG_LENGTH + 3000),
   );
 }
 
@@ -797,6 +797,7 @@ function stopEgg(): void {
     if (!isNoteHeldByUser(i)) setPadState(i, false);
   }
 
+  orb.setLowPower(false);
   document.body.classList.remove("is-rolled");
   stagePreset.textContent = PRESETS[currentPreset].name;
   stagePreset.dataset.preset = currentPreset;
@@ -887,9 +888,11 @@ let konamiIndex = 0;
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
+  // Letter keys do not activate buttons or links, so the synth stays playable
+  // after clicking one. Range inputs and text fields need their keys.
   return Boolean(
     target.closest(
-      "input, textarea, select, button, a, [contenteditable='true'], [role='slider'], [role='button']",
+      "input, textarea, select, [contenteditable='true'], [role='slider']",
     ),
   );
 }

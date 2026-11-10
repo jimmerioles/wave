@@ -94,6 +94,9 @@ the gag is visual-only. The About dialog has a small hint.
 - Triggered by triple-tapping the brand mark or the Konami code. The demo
   button becomes a stop/progress control during playback; `Esc` also stops it.
   It stops the main demo, restores the stage, respects mute and reduced motion.
+- Notes are scheduled in a rolling two-second window, and each note's audio
+  chain disconnects when it ends. During the egg the orb runs at 30fps with
+  fewer particles and no canvas shadow blur.
 
 **Page**
 - Typography: Space Grotesk + Instrument Serif accents + JetBrains Mono.
@@ -102,7 +105,8 @@ the gag is visual-only. The About dialog has a small hint.
   4×2 grid; the page fits without scrolling at those target sizes.
 - Keyboard-accessible pad buttons with visible focus states, `aria-pressed`,
   a focus-trapped About dialog and native range controls.
-- Keyboard notes are suppressed while a control or dialog is focused.
+- Keyboard notes stay live after clicking a button or link; they are suppressed
+  only while a text field, range control or dialog has focus.
 - Pointer events support multi-touch pads, capture, and idle cancellation.
 
 ## Structure
