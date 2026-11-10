@@ -15,6 +15,12 @@ import {
   type ArpPattern,
   type ArpRate,
 } from "./arp";
+import {
+  loadSettings,
+  saveSettings,
+  type StoredSettings,
+  type VisualMode,
+} from "./settings";
 import { OrbScene } from "./orb";
 import {
   SONG_BASS,
@@ -46,6 +52,8 @@ const cutoff = must<HTMLInputElement>("#cutoff");
 const cutoffOut = must<HTMLOutputElement>("#cutoff-out");
 const delay = must<HTMLInputElement>("#delay");
 const delayOut = must<HTMLOutputElement>("#delay-out");
+const space = must<HTMLInputElement>("#space");
+const spaceOut = must<HTMLOutputElement>("#space-out");
 const muteButton = must<HTMLButtonElement>("#mute");
 const muteLabel = must<HTMLElement>("#mute-label");
 const recordButton = must<HTMLButtonElement>("#record");
@@ -117,6 +125,8 @@ let recordTicker: number | null = null;
 let recordLimitTimer: number | null = null;
 let takeUrl: string | null = null;
 let takeDuration = 0;
+const storedSettings = loadSettings();
+let visualMode: VisualMode = storedSettings.visual ?? "orb";
 
 function isUserSource(source: string): boolean {
   return !source.startsWith("demo:");
@@ -493,6 +503,7 @@ function setArpEnabled(enabled: boolean, resumeHeld = true): void {
 
   syncArpUi();
   syncPlayingState();
+  persistSoon();
 }
 
 arpToggle.addEventListener("click", () => setArpEnabled(!arp.enabled));
@@ -507,6 +518,7 @@ arpLatch.addEventListener("click", () => {
   arp.setLatch(next);
   syncArpUi();
   syncPlayingState();
+  persistSoon();
 });
 
 for (const button of arpPatternButtons) {
@@ -514,6 +526,7 @@ for (const button of arpPatternButtons) {
     const pattern = button.dataset.pattern as ArpPattern;
     arp.setPattern(pattern);
     syncArpUi();
+    persistSoon();
   });
 }
 
@@ -522,6 +535,7 @@ for (const button of arpRateButtons) {
     const rate = button.dataset.rate as ArpRate;
     arp.setRate(rate);
     syncArpUi();
+    persistSoon();
   });
 }
 
@@ -529,7 +543,39 @@ for (const button of arpRateButtons) {
    Presets and controls
    ------------------------------------------------------------------------- */
 
-let currentPreset: PresetKey = "bloom";
+let currentPreset: PresetKey = storedSettings.preset ?? "bloom";
+let persistTimer: number | null = null;
+
+function currentSettings(): StoredSettings {
+  return {
+    preset: currentPreset,
+    cutoff: Number(cutoff.value),
+    echo: Number(delay.value),
+    space: Number(space.value),
+    tempo,
+    arpEnabled: arp.enabled,
+    arpLatch: arp.latch,
+    arpPattern: arp.pattern,
+    arpRate: arp.rate,
+    visual: visualMode,
+  };
+}
+
+function persistNow(): void {
+  if (persistTimer !== null) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  saveSettings(currentSettings());
+}
+
+function persistSoon(): void {
+  if (persistTimer !== null) clearTimeout(persistTimer);
+  persistTimer = window.setTimeout(() => {
+    persistTimer = null;
+    saveSettings(currentSettings());
+  }, 160);
+}
 
 function paintRange(input: HTMLInputElement): void {
   const min = Number(input.min);
@@ -546,6 +592,7 @@ function syncCutoff(): void {
   cutoffOut.textContent = formatHz(hz);
   cutoff.setAttribute("aria-valuetext", `${formatHz(hz)} cutoff`);
   paintRange(cutoff);
+  persistSoon();
 }
 
 function syncEcho(): void {
@@ -554,6 +601,16 @@ function syncEcho(): void {
   delayOut.textContent = `${value}%`;
   delay.setAttribute("aria-valuetext", `${value} percent echo`);
   paintRange(delay);
+  persistSoon();
+}
+
+function syncSpace(): void {
+  const value = Number(space.value);
+  engine.setSpace(value);
+  spaceOut.textContent = `${value}%`;
+  space.setAttribute("aria-valuetext", `${value} percent reverb`);
+  paintRange(space);
+  persistSoon();
 }
 
 function syncTempo(): void {
@@ -564,6 +621,7 @@ function syncTempo(): void {
 
   if (!demoPlaying && !eggPlaying) demoSub.textContent = demoSubText();
   updateArpMeta();
+  persistSoon();
 }
 
 function applyPreset(key: PresetKey, syncControls = true): void {
@@ -586,9 +644,12 @@ function applyPreset(key: PresetKey, syncControls = true): void {
   if (syncControls) {
     cutoff.value = String(preset.cutoff);
     delay.value = String(preset.echo);
+    space.value = String(preset.space);
   }
   syncCutoff();
   syncEcho();
+  syncSpace();
+  persistSoon();
 }
 
 for (const button of presetButtons) {
@@ -602,6 +663,7 @@ for (const button of presetButtons) {
 
 cutoff.addEventListener("input", syncCutoff);
 delay.addEventListener("input", syncEcho);
+space.addEventListener("input", syncSpace);
 tempoInput.addEventListener("input", syncTempo);
 
 /* -------------------------------------------------------------------------
@@ -1548,6 +1610,7 @@ window.addEventListener("blur", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
+    persistNow();
     stopDemo();
     stopEgg();
     stopRecording();
@@ -1561,6 +1624,22 @@ document.addEventListener("visibilitychange", () => {
 // Keep the initial UI honest before any sound has been made.
 noteReadout.textContent = "—";
 noteSub.textContent = "hold a key";
-applyPreset("bloom");
+applyPreset(currentPreset, true);
+
+if (storedSettings.cutoff !== undefined) cutoff.value = String(storedSettings.cutoff);
+if (storedSettings.echo !== undefined) delay.value = String(storedSettings.echo);
+if (storedSettings.space !== undefined) space.value = String(storedSettings.space);
+if (storedSettings.tempo !== undefined) {
+  tempoInput.value = String(storedSettings.tempo);
+}
+if (storedSettings.arpPattern) arp.pattern = storedSettings.arpPattern;
+if (storedSettings.arpRate) arp.rate = storedSettings.arpRate;
+if (storedSettings.arpLatch) arp.latch = storedSettings.arpLatch;
+
+syncCutoff();
+syncEcho();
+syncSpace();
 syncTempo();
 syncArpUi();
+
+if (storedSettings.arpEnabled) setArpEnabled(true, false);

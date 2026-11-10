@@ -40,10 +40,10 @@ npm run preview   # serve the production build at /wave/
   `Esc` stops the pattern.
 - **Tempo** sets the shared clock, 50–160 BPM. It drives both the arp and the
   demo; the demo's duration label updates before the next play.
-- **Bloom / Glass / Tape** change the oscillator mix, filter, envelope and
-  delay character — and tint the orb to match.
+- **Bloom / Glass / Tape / Haze / Pulse** change the oscillator mix, filter,
+  envelope, delay and reverb character — and tint the orb to match.
 - **Filter** sweeps the shared low-pass cutoff. **Echo** controls how much of
-  the ping-pong delay returns.
+  the ping-pong delay returns. **Space** sets the shared reverb return.
 - **Play the chorus** performs an arrangement of “Goodness of God” at the
   current tempo. The demo adds two high notes above the keybed for the chorus
   lift. `Esc` stops it early.
@@ -72,10 +72,14 @@ the gag is visual-only. The About dialog has a small hint.
 - Shared resonant low-pass filter, per-note ADSR envelope, detuned layers.
 - Stereo ping-pong delay with damped feedback, soft-clip saturation and a
   master compressor.
+- A convolution reverb with a generated stereo impulse response, shared by
+  every voice and returned through the tone filter.
 - `AnalyserNode` drives every visual response; mute is applied after the
   analyser so the instrument stays alive visually with sound off.
 - AudioContext suspends when the page is hidden and resumes on the next
   gesture.
+- Preset, filter, echo, space, tempo and arp settings persist in
+  `localStorage` with validation and quiet failure when storage is unavailable.
 
 **Visual instrument**
 - Canvas 2D orb with a solar core, warped bands and a pointer-following
@@ -146,6 +150,7 @@ index.html        static shell, copy, controls
 src/style.css     layout, identity, responsive + reduced-motion styles
 src/audio.ts      Web Audio graph, presets, voices, note helpers
 src/arp.ts        lookahead arpeggiator scheduler and pattern logic
+src/settings.ts   validated localStorage persistence
 src/orb.ts        Canvas 2D visualizer and particle system
 src/main.ts       input, presets, recording, demo, lifecycle
 CONCEPT.md        original brief
@@ -157,13 +162,11 @@ synthesized at runtime.
 
 ## Roadmap
 
-Three candidate next passes, roughly in order of leverage:
+Two candidate next passes, roughly in order of leverage:
 
-1. **Sound design pass.** Add a reverb, a couple more presets, and persist the
-   chosen preset, filter, echo and arp settings in `localStorage`.
-2. **Visual polish.** An oscilloscope mode, per-preset motion signatures,
+1. **Visual polish.** An oscilloscope mode, per-preset motion signatures,
    pointer glissando across pads, and further mobile layout refinements.
-3. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
+2. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
    the existing engine and keybed.
 
 ## Rough edges

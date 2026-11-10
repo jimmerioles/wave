@@ -120,7 +120,7 @@
           </h1>
 
           <p class="subcopy">
-            Eight keys, three moods, one warm little instrument.
+            Eight keys, five moods, one warm little instrument.
             <strong>Hold a key</strong> and the page starts listening.
           </p>
 
@@ -177,7 +177,7 @@
         <div class="console-group presets-group">
           <div class="console-head">
             <span>Voice</span>
-            <span class="console-note">three moods</span>
+            <span class="console-note">five moods</span>
           </div>
           <div class="segmented" role="group" aria-label="Preset">
             <button
@@ -203,6 +203,22 @@
               aria-pressed="false"
             >
               <span class="preset-dot" aria-hidden="true"></span>Tape
+            </button>
+            <button
+              class="preset"
+              type="button"
+              data-preset="haze"
+              aria-pressed="false"
+            >
+              <span class="preset-dot" aria-hidden="true"></span>Haze
+            </button>
+            <button
+              class="preset"
+              type="button"
+              data-preset="pulse"
+              aria-pressed="false"
+            >
+              <span class="preset-dot" aria-hidden="true"></span>Pulse
             </button>
           </div>
         </div>
@@ -239,6 +255,22 @@
               step="1"
               value="22"
               aria-label="Echo amount"
+            />
+          </div>
+
+          <div class="slider">
+            <div class="range-head">
+              <label for="space">Space</label>
+              <output id="space-out" for="space">26%</output>
+            </div>
+            <input
+              id="space"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="26"
+              aria-label="Reverb amount"
             />
           </div>
         </div>
@@ -362,24 +394,24 @@
           keys you hold.
         </p>
         <p>
-          Eight voices run through a resonant filter, a soft envelope and a
-          ping-pong echo. The arp steps through a held chord on the shared
-          tempo, and the analyser is real, so the orb moves with the notes.
-          The demo is a live arrangement of the chorus of
+          Eight voices run through a resonant filter, a soft envelope, a
+          ping-pong echo and a generated reverb. The arp steps through a held
+          chord on the shared tempo, and the analyser is real, so the orb moves
+          with the notes. The demo is a live arrangement of the chorus of
           <em>Goodness of God</em>, not a recording.
         </p>
 
         <div class="about-stats" aria-label="Instrument facts">
           <div class="stat"><strong>8</strong><span>voices</span></div>
-          <div class="stat"><strong>3</strong><span>presets</span></div>
+          <div class="stat"><strong>5</strong><span>presets</span></div>
           <div class="stat"><strong>0</strong><span>samples</span></div>
         </div>
 
         <p class="about-foot">
           Play with <kbd>A</kbd>–<kbd>K</kbd>, or tap the pads. Turn on the arp
           to step through a held chord; latch keeps it running. Use the range
-          sliders to shape the tone. The demo is synthesized live, not a
-          recording.
+          sliders to shape the tone, echo and space. The demo is synthesized
+          live, not a recording.
         </p>
 
         <p class="about-secret">Psst — the mark has a tell.</p>

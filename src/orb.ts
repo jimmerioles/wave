@@ -33,6 +33,16 @@ const PALETTES: Record<PresetKey, Palette> = {
     accent: [255, 181, 112],
     secondary: [255, 137, 112],
   },
+  haze: {
+    core: ["#f4f0ff", "#c9c4ff", "#8e9bff", "#5860ad", "#15162f"],
+    accent: [150, 160, 255],
+    secondary: [130, 225, 255],
+  },
+  pulse: {
+    core: ["#fff5d6", "#ffd177", "#ff945f", "#d64a68", "#291027"],
+    accent: [255, 150, 100],
+    secondary: [110, 235, 255],
+  },
 };
 
 interface Particle {

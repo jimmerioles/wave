@@ -37,15 +37,16 @@ export const NOTES: WaveNote[] = [
 /** How many notes the playable keybed exposes. */
 export const KEYBED_SIZE = 8;
 
-export type PresetKey = "bloom" | "glass" | "tape";
+export type PresetKey = "bloom" | "glass" | "tape" | "haze" | "pulse";
 
 export interface Preset {
   key: PresetKey;
   name: string;
   description: string;
-  /** Slider values (0–100 cutoff, 0–60 echo). */
+  /** Slider values (0–100 cutoff, 0–60 echo, 0–100 space). */
   cutoff: number;
   echo: number;
+  space: number;
   q: number;
   delayTime: number;
   feedback: number;
@@ -66,6 +67,7 @@ export const PRESETS: Record<PresetKey, Preset> = {
     description: "Warm, wide, a little slow.",
     cutoff: 56,
     echo: 22,
+    space: 26,
     q: 1.3,
     delayTime: 0.34,
     feedback: 0.34,
@@ -84,6 +86,7 @@ export const PRESETS: Record<PresetKey, Preset> = {
     description: "Bright, brittle, quick to speak.",
     cutoff: 82,
     echo: 34,
+    space: 18,
     q: 3.1,
     delayTime: 0.21,
     feedback: 0.44,
@@ -102,6 +105,7 @@ export const PRESETS: Record<PresetKey, Preset> = {
     description: "Soft, dusty, slightly warped.",
     cutoff: 38,
     echo: 42,
+    space: 34,
     q: 0.8,
     delayTime: 0.46,
     feedback: 0.46,
@@ -113,6 +117,44 @@ export const PRESETS: Record<PresetKey, Preset> = {
     triangle: 0.2,
     sine: 0.24,
     detune: 14,
+  },
+  haze: {
+    key: "haze",
+    name: "Haze",
+    description: "Soft, distant, slow to arrive.",
+    cutoff: 42,
+    echo: 30,
+    space: 62,
+    q: 0.9,
+    delayTime: 0.52,
+    feedback: 0.38,
+    attack: 0.18,
+    decay: 0.95,
+    sustain: 0.76,
+    release: 2.3,
+    saw: 0.3,
+    triangle: 0.5,
+    sine: 0.2,
+    detune: 18,
+  },
+  pulse: {
+    key: "pulse",
+    name: "Pulse",
+    description: "Bright, tight, a little electric.",
+    cutoff: 78,
+    echo: 12,
+    space: 10,
+    q: 2.4,
+    delayTime: 0.17,
+    feedback: 0.2,
+    attack: 0.004,
+    decay: 0.16,
+    sustain: 0.2,
+    release: 0.4,
+    saw: 0.34,
+    triangle: 0.42,
+    sine: 0.24,
+    detune: 3,
   },
 };
 
@@ -160,6 +202,31 @@ function makeSoftClipCurve(amount = 1.6): Float32Array<ArrayBuffer> {
   return curve;
 }
 
+/** A short, diffuse stereo impulse response for the shared reverb. */
+function makeImpulseResponse(
+  ctx: AudioContext,
+  seconds: number,
+  decay: number,
+): AudioBuffer {
+  const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+  const preDelay = Math.floor(ctx.sampleRate * 0.018);
+  const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+
+  for (let channel = 0; channel < 2; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      if (i < preDelay) {
+        data[i] = 0;
+        continue;
+      }
+      const t = (i - preDelay) / Math.max(1, length - preDelay);
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, decay);
+    }
+  }
+
+  return buffer;
+}
+
 export class SynthEngine {
   analyser: AnalyserNode | null = null;
 
@@ -172,6 +239,7 @@ export class SynthEngine {
   private delayFeedbackL: GainNode | null = null;
   private delayFeedbackR: GainNode | null = null;
   private delayWet: GainNode | null = null;
+  private reverbWet: GainNode | null = null;
   private master: GainNode | null = null;
   private muteGain: GainNode | null = null;
   private recordDestination: MediaStreamAudioDestinationNode | null = null;
@@ -180,6 +248,7 @@ export class SynthEngine {
   private preset: Preset = PRESETS.bloom;
   private cutoffValue = PRESETS.bloom.cutoff;
   private echoValue = PRESETS.bloom.echo / 100;
+  private spaceValue = PRESETS.bloom.space / 100;
   private muted = false;
 
   get ready(): boolean {
@@ -278,11 +347,21 @@ export class SynthEngine {
     wet.gain.setTargetAtTime(this.echoValue * 0.55, ctx.currentTime, 0.04);
   }
 
+  /** 0–100 slider value: how much of the shared reverb returns. */
+  setSpace(sliderValue: number): void {
+    this.spaceValue = Math.max(0, Math.min(100, sliderValue)) / 100;
+    const ctx = this.context;
+    const wet = this.reverbWet;
+    if (!ctx || !wet) return;
+    wet.gain.setTargetAtTime(this.spaceValue * 0.62, ctx.currentTime, 0.05);
+  }
+
   setPreset(key: PresetKey): void {
     const preset = PRESETS[key];
     this.preset = preset;
     this.cutoffValue = preset.cutoff;
     this.echoValue = preset.echo / 100;
+    this.spaceValue = preset.space / 100;
 
     const ctx = this.context;
     if (!ctx) return;
@@ -292,6 +371,7 @@ export class SynthEngine {
     const right = this.delayRight;
     const fbL = this.delayFeedbackL;
     const fbR = this.delayFeedbackR;
+    const reverbWet = this.reverbWet;
     const now = ctx.currentTime;
 
     if (tone) {
@@ -309,6 +389,9 @@ export class SynthEngine {
     if (fbL && fbR) {
       fbL.gain.setTargetAtTime(preset.feedback, now, 0.08);
       fbR.gain.setTargetAtTime(preset.feedback, now, 0.08);
+    }
+    if (reverbWet) {
+      reverbWet.gain.setTargetAtTime(this.spaceValue * 0.62, now, 0.06);
     }
   }
 
@@ -586,6 +669,19 @@ export class SynthEngine {
     delayRight.connect(dampingR).connect(feedbackR).connect(delayLeft);
     wet.connect(tone);
 
+    // Shared reverb. The send is pre-filter; the return goes through the tone
+    // control, so the filter also darkens the tail.
+    const reverbSend = ctx.createGain();
+    reverbSend.gain.value = 0.55;
+
+    const reverb = ctx.createConvolver();
+    reverb.buffer = makeImpulseResponse(ctx, 2.6, 2.4);
+
+    const reverbWet = ctx.createGain();
+    reverbWet.gain.value = this.spaceValue * 0.62;
+
+    bus.connect(reverbSend).connect(reverb).connect(reverbWet).connect(tone);
+
     this.bus = bus;
     this.tone = tone;
     this.delayInput = delayInput;
@@ -594,6 +690,7 @@ export class SynthEngine {
     this.delayFeedbackL = feedbackL;
     this.delayFeedbackR = feedbackR;
     this.delayWet = wet;
+    this.reverbWet = reverbWet;
     this.master = master;
     this.muteGain = muteGain;
     this.analyser = analyser;
