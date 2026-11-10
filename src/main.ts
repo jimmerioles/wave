@@ -48,6 +48,8 @@ const noteSub = must<HTMLElement>("#note-sub");
 const meterBars = must<HTMLElement>("#meter-bars");
 const meterValue = must<HTMLElement>("#meter-value");
 const stagePreset = must<HTMLElement>("#stage-preset");
+const viewOrb = must<HTMLButtonElement>("#view-orb");
+const viewScope = must<HTMLButtonElement>("#view-scope");
 const cutoff = must<HTMLInputElement>("#cutoff");
 const cutoffOut = must<HTMLOutputElement>("#cutoff-out");
 const delay = must<HTMLInputElement>("#delay");
@@ -105,6 +107,7 @@ const NOTE_ACCENTS = [
 const activeSources = new Map<string, number>();
 const noteCounts = new Array<number>(NOTES.length).fill(0);
 const heldKeys = new Set<string>();
+const glidePointers = new Map<number, string>();
 const pads: HTMLButtonElement[] = [];
 const padNotes = NOTES.slice(0, KEYBED_SIZE);
 let lastNote = -1;
@@ -187,10 +190,13 @@ function buildKeybed(): void {
         /* Capture is a nicety; the note still plays. */
       }
       engine.ensure();
-      press(index, sourceFor(event.pointerId));
+      const source = sourceFor(event.pointerId);
+      glidePointers.set(event.pointerId, source);
+      press(index, source);
     });
 
     const endPointer = (event: PointerEvent): void => {
+      glidePointers.delete(event.pointerId);
       release(sourceFor(event.pointerId));
     };
 
@@ -229,6 +235,44 @@ function buildKeybed(): void {
     pads.push(pad);
   });
 }
+
+function padIndexAtPoint(clientX: number, clientY: number): number | null {
+  const element = document.elementFromPoint(clientX, clientY);
+  const pad = element?.closest<HTMLButtonElement>(".pad");
+  if (!pad) return null;
+  const index = Number(pad.dataset.note);
+  return Number.isInteger(index) ? index : null;
+}
+
+/** Drag across the keybed to play one note after another. */
+window.addEventListener(
+  "pointermove",
+  (event) => {
+    const source = glidePointers.get(event.pointerId);
+    if (!source) return;
+
+    const next = padIndexAtPoint(event.clientX, event.clientY);
+    const current = activeSources.get(source);
+    if (next === current) return;
+
+    if (current !== undefined) release(source);
+    if (next !== null) {
+      engine.ensure();
+      press(next, source);
+    }
+  },
+  { passive: true },
+);
+
+const endGlide = (event: PointerEvent): void => {
+  const source = glidePointers.get(event.pointerId);
+  if (!source) return;
+  glidePointers.delete(event.pointerId);
+  release(source);
+};
+
+window.addEventListener("pointerup", endGlide, { passive: true });
+window.addEventListener("pointercancel", endGlide, { passive: true });
 
 function syncPlayingState(): void {
   document.body.classList.toggle(
@@ -341,6 +385,7 @@ function release(source: string, releaseSeconds?: number): void {
 function releaseAll(): void {
   for (const source of [...activeSources.keys()]) release(source);
   heldKeys.clear();
+  glidePointers.clear();
   arpChord = [];
   arp.stop();
   syncArpPads();
@@ -538,6 +583,18 @@ for (const button of arpRateButtons) {
     persistSoon();
   });
 }
+
+function setViewMode(mode: VisualMode, persist = true): void {
+  visualMode = mode;
+  orb.setMode(mode);
+  viewOrb.setAttribute("aria-pressed", String(mode === "orb"));
+  viewScope.setAttribute("aria-pressed", String(mode === "scope"));
+  document.body.classList.toggle("is-scope", mode === "scope");
+  if (persist) persistSoon();
+}
+
+viewOrb.addEventListener("click", () => setViewMode("orb"));
+viewScope.addEventListener("click", () => setViewMode("scope"));
 
 /* -------------------------------------------------------------------------
    Presets and controls
@@ -1641,5 +1698,6 @@ syncEcho();
 syncSpace();
 syncTempo();
 syncArpUi();
+setViewMode(visualMode, false);
 
 if (storedSettings.arpEnabled) setArpEnabled(true, false);

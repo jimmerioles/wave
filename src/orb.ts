@@ -45,6 +45,27 @@ const PALETTES: Record<PresetKey, Palette> = {
   },
 };
 
+interface Motion {
+  /** Breathing and waveform drift multiplier. */
+  speed: number;
+  /** Band/organic wobble multiplier. */
+  wobble: number;
+  /** Orbit and scan-line speed multiplier. */
+  orbit: number;
+  /** How quickly a note-on pulse fades. */
+  pulseDecay: number;
+  /** Halo intensity multiplier. */
+  halo: number;
+}
+
+const MOTIONS: Record<PresetKey, Motion> = {
+  bloom: { speed: 1, wobble: 1, orbit: 1, pulseDecay: 2.6, halo: 1 },
+  glass: { speed: 1.6, wobble: 0.72, orbit: 1.9, pulseDecay: 3.7, halo: 0.82 },
+  tape: { speed: 0.7, wobble: 1.35, orbit: 0.62, pulseDecay: 1.9, halo: 1.18 },
+  haze: { speed: 0.5, wobble: 1.75, orbit: 0.42, pulseDecay: 1.35, halo: 1.35 },
+  pulse: { speed: 1.95, wobble: 0.5, orbit: 2.25, pulseDecay: 4.4, halo: 0.68 },
+};
+
 interface Particle {
   x: number;
   y: number;
@@ -110,10 +131,13 @@ export class OrbScene {
   private dpr = 1;
 
   private palette: Palette = PALETTES.bloom;
+  private motion: Motion = MOTIONS.bloom;
+  private mode: "orb" | "scope" = "orb";
 
   private timeData = new Uint8Array(2048);
   private freqData = new Uint8Array(1024);
   private waveform = new Float32Array(96);
+  private scopeWave = new Float32Array(256);
   private ticks = new Float32Array(64);
 
   private targetLevel = 0;
@@ -200,6 +224,13 @@ export class OrbScene {
 
   setPreset(key: PresetKey): void {
     this.palette = PALETTES[key];
+    this.motion = MOTIONS[key];
+    if (!this.running) this.drawFrame(0, false);
+  }
+
+  setMode(mode: "orb" | "scope"): void {
+    if (this.mode === mode) return;
+    this.mode = mode;
     if (!this.running) this.drawFrame(0, false);
   }
 
@@ -349,7 +380,7 @@ export class OrbScene {
       dt,
     );
 
-    this.pulse *= Math.exp(-dt * 2.6);
+    this.pulse *= Math.exp(-dt * this.motion.pulseDecay);
     this.level = clamp(this.level, 0, 1.4);
     this.bass = clamp(this.bass, 0, 1.4);
     this.treble = clamp(this.treble, 0, 1.4);
@@ -472,8 +503,11 @@ export class OrbScene {
 
   private updateMotes(dt: number): void {
     for (const mote of this.motes) {
-      mote.y -= mote.speed * dt;
-      mote.x += Math.sin(this.elapsed * 0.35 + mote.phase) * mote.drift * dt;
+      mote.y -= mote.speed * dt * (0.65 + this.motion.speed * 0.35);
+      mote.x +=
+        Math.sin(this.elapsed * 0.35 * this.motion.speed + mote.phase) *
+        mote.drift *
+        dt;
       if (mote.y < -6) {
         mote.y = this.height + 6;
         mote.x = Math.random() * this.width;
@@ -516,9 +550,20 @@ export class OrbScene {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
+    if (this.mode === "scope") {
+      this.drawScope(time, animated);
+      this.drawMotes();
+      this.drawParticles();
+      return;
+    }
+
     const centerX = width / 2 + this.pointerX * (animated ? 9 : 0);
     const centerY = height / 2 + this.pointerY * (animated ? 7 : 0);
-    const breathing = animated ? Math.sin(time * 0.72) * 0.007 : 0;
+    const breathing = animated
+      ? Math.sin(time * 0.72 * this.motion.speed) *
+        0.007 *
+        this.motion.wobble
+      : 0;
     const radius =
       Math.min(width, height) *
       0.315 *
@@ -541,6 +586,132 @@ export class OrbScene {
     this.drawParticles();
   }
 
+  /** Full-stage oscilloscope: a delayed trace, a bright trace and a scanline. */
+  private drawScope(time: number, animated: boolean): void {
+    const ctx = this.context;
+    const { width, height, palette, timeData, scopeWave, motion } = this;
+    const mid = height / 2;
+
+    this.orbX = width / 2;
+    this.orbY = mid;
+    this.orbRadius = Math.min(width, height) * 0.315;
+
+    const glow = ctx.createRadialGradient(
+      width / 2,
+      mid,
+      10,
+      width / 2,
+      mid,
+      Math.max(width, height) * 0.55,
+    );
+    glow.addColorStop(
+      0,
+      rgba(
+        palette.accent,
+        Math.min(1, (0.08 + this.level * 0.05) * motion.halo),
+      ),
+    );
+    glow.addColorStop(0.55, rgba(palette.secondary, 0.025));
+    glow.addColorStop(1, rgba(palette.accent, 0));
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(230, 236, 252, 0.05)";
+    ctx.lineWidth = 1;
+    const stepX = Math.max(40, width / 16);
+    for (let x = stepX; x < width; x += stepX) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    const stepY = Math.max(28, height / 7);
+    for (let y = mid % stepY; y < height; y += stepY) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(230, 236, 252, 0.12)";
+    ctx.beginPath();
+    ctx.moveTo(0, mid);
+    ctx.lineTo(width, mid);
+    ctx.stroke();
+    ctx.restore();
+
+    const scan = animated ? (time * 0.14 * motion.orbit) % 1 : 0.5;
+    const scanX = scan * width;
+    const scanGradient = ctx.createLinearGradient(scanX - 30, 0, scanX + 4, 0);
+    scanGradient.addColorStop(0, rgba(palette.secondary, 0));
+    scanGradient.addColorStop(
+      1,
+      rgba(palette.secondary, 0.14 + this.level * 0.1),
+    );
+    ctx.fillStyle = scanGradient;
+    ctx.fillRect(Math.max(0, scanX - 30), 0, 34, height);
+
+    const points = scopeWave.length;
+    const sampleStep = timeData.length / points;
+    const smoothing = animated ? 0.38 : 1;
+    for (let i = 0; i < points; i++) {
+      let target: number;
+      if (animated && this.engine.analyser) {
+        const sample = timeData[Math.floor(i * sampleStep)];
+        target = (sample - 128) / 128;
+      } else {
+        target = Math.sin((i / points) * TAU * 2 + time * 0.4) * 0.06;
+      }
+      scopeWave[i] += (target - scopeWave[i]) * smoothing;
+    }
+
+    const amplitude =
+      height * (0.16 + this.level * 0.14 + this.pulse * 0.025);
+
+    const drawTrace = (
+      offset: number,
+      color: RGB,
+      lineWidth: number,
+      alpha: number,
+      yShift: number,
+    ): void => {
+      ctx.beginPath();
+      for (let i = 0; i <= points; i++) {
+        const index = i % points;
+        const source = (index + offset + points) % points;
+        const x = (index / points) * width;
+        const y = mid + scopeWave[source] * amplitude + yShift;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = rgba(color, alpha);
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+    };
+
+    drawTrace(-6, palette.secondary, 1, 0.22 + this.treble * 0.18, 2);
+
+    ctx.save();
+    if (!this.lowPower) {
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = rgba(palette.accent, 0.55);
+    }
+    drawTrace(0, palette.accent, 2, 0.95, 0);
+    ctx.restore();
+
+    const focusX = width / 2 + this.pointerX * width * 0.32;
+    const focus = ctx.createLinearGradient(focusX, 0, focusX, height);
+    focus.addColorStop(0, rgba(palette.secondary, 0));
+    focus.addColorStop(0.5, rgba(palette.secondary, 0.14));
+    focus.addColorStop(1, rgba(palette.secondary, 0));
+    ctx.strokeStyle = focus;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(focusX, 0);
+    ctx.lineTo(focusX, height);
+    ctx.stroke();
+  }
+
   private drawHalo(
     centerX: number,
     centerY: number,
@@ -560,9 +731,24 @@ export class OrbScene {
       centerY,
       radius * 2.15,
     );
-    glow.addColorStop(0, rgba(palette.accent, 0.17 + this.level * 0.07));
-    glow.addColorStop(0.38, rgba(palette.accent, 0.07 + this.level * 0.035));
-    glow.addColorStop(0.7, rgba(palette.secondary, 0.025));
+    glow.addColorStop(
+      0,
+      rgba(
+        palette.accent,
+        Math.min(1, (0.17 + this.level * 0.07) * this.motion.halo),
+      ),
+    );
+    glow.addColorStop(
+      0.38,
+      rgba(
+        palette.accent,
+        Math.min(1, (0.07 + this.level * 0.035) * this.motion.halo),
+      ),
+    );
+    glow.addColorStop(
+      0.7,
+      rgba(palette.secondary, Math.min(1, 0.025 * this.motion.halo)),
+    );
     glow.addColorStop(1, rgba(palette.accent, 0));
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, this.width, this.height);
@@ -592,7 +778,7 @@ export class OrbScene {
     const ctx = this.context;
     const { palette, freqData } = this;
     const tickRadius = radius * 1.24;
-    const rotation = animated ? time * 0.055 : 0.12;
+    const rotation = animated ? time * 0.055 * this.motion.orbit : 0.12;
     const bins = freqData.length;
     const metric = animated && this.engine.analyser ? 1 : 0;
 
@@ -608,7 +794,9 @@ export class OrbScene {
       );
       const measured = metric ? freqData[bin] / 255 : 0;
       const idle =
-        0.035 + 0.025 * Math.sin(time * 0.55 + percentile * TAU * 2.0);
+        0.035 +
+        0.025 *
+          Math.sin(time * 0.55 * this.motion.speed + percentile * TAU * 2.0);
       const target = animated ? measured + idle : 0.02;
       this.ticks[i] += (target - this.ticks[i]) * (animated ? 0.16 : 1);
 
@@ -647,7 +835,7 @@ export class OrbScene {
     ctx.stroke();
 
     ctx.setLineDash([1, 9]);
-    ctx.lineDashOffset = -time * 7;
+    ctx.lineDashOffset = -time * 7 * this.motion.orbit;
     ctx.strokeStyle = "rgba(230, 236, 252, 0.14)";
     ctx.beginPath();
     ctx.arc(0, 0, radius * 1.52, 0, TAU);
@@ -697,13 +885,24 @@ export class OrbScene {
     const bands = 14;
     for (let j = 0; j < bands; j++) {
       const y = centerY - radius + ((j + 0.5) / bands) * radius * 2;
-      const drift = Math.sin(time * 0.34 + j * 0.6) * radius * 0.035;
-      const warp = this.bass * Math.sin(time * 0.9 + j * 1.2) * radius * 0.05;
+      const drift =
+        Math.sin(time * 0.34 * this.motion.speed + j * 0.6) *
+        radius *
+        0.035;
+      const warp =
+        this.bass *
+        Math.sin(time * 0.9 * this.motion.speed + j * 1.2) *
+        radius *
+        0.05;
 
       ctx.beginPath();
       for (let x = -radius; x <= radius; x += 9) {
         const wave =
-          Math.sin((x / radius) * 2.4 + time * 0.55 + j * 0.52) *
+          Math.sin(
+            (x / radius) * 2.4 +
+              time * 0.55 * this.motion.speed +
+              j * 0.52,
+          ) *
           radius *
           (0.012 + this.level * 0.028);
         const px = centerX + x;
@@ -816,8 +1015,8 @@ export class OrbScene {
       const index = i % points;
       const angle = (index / points) * TAU + angleOffset;
       const organic =
-        Math.sin(angle * 3 + time * 0.6) * 0.018 +
-        Math.sin(angle * 7 - time * 0.35) * 0.008;
+        Math.sin(angle * 3 + time * 0.6 * this.motion.speed) * 0.018 +
+        Math.sin(angle * 7 - time * 0.35 * this.motion.speed) * 0.008;
       const displacement = animated
         ? waveform[index] * (0.5 + this.level * 0.9) + organic
         : Math.sin(angle * 4) * 0.08;

@@ -901,6 +901,59 @@ body[data-preset="pulse"] .stage::before {
   );
 }
 
+.stage-mode {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  z-index: 3;
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(6, 10, 21, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+.stage-mode button {
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.stage-mode button:hover {
+  color: var(--text);
+}
+
+.stage-mode button[aria-pressed="true"] {
+  color: var(--mint);
+  background: rgba(109, 243, 205, 0.1);
+}
+
+.stage-mode button:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 1px;
+}
+
+body.is-scope .stage::before {
+  opacity: 0.6;
+}
+
 .stage-bottom {
   position: absolute;
   left: 6px;
@@ -2411,6 +2464,15 @@ body.is-arp .keybed-meta {
     right: 1px;
     font-size: 7px;
     letter-spacing: 0.1em;
+  }
+
+  .stage-mode {
+    bottom: 0;
+  }
+
+  .stage-mode button {
+    padding: 3px 6px;
+    font-size: 6.5px;
   }
 
   .stage-bottom {

@@ -41,7 +41,12 @@ npm run preview   # serve the production build at /wave/
 - **Tempo** sets the shared clock, 50–160 BPM. It drives both the arp and the
   demo; the demo's duration label updates before the next play.
 - **Bloom / Glass / Tape / Haze / Pulse** change the oscillator mix, filter,
-  envelope, delay and reverb character — and tint the orb to match.
+  envelope, delay and reverb character — and tint the orb to match. Each preset
+  also has its own motion signature.
+- **Orb / Scope** switches the stage between the orb and a live oscilloscope.
+  The choice is saved with the rest of the settings.
+- **Drag across the pads** to glissando from note to note. Multi-touch still
+  works: each pointer can glide independently.
 - **Filter** sweeps the shared low-pass cutoff. **Echo** controls how much of
   the ping-pong delay returns. **Space** sets the shared reverb return.
 - **Play the chorus** performs an arrangement of “Goodness of God” at the
@@ -88,9 +93,13 @@ the gag is visual-only. The About dialog has a small hint.
   slow orbit arcs.
 - Soft springs on level, bass, treble and pointer parallax.
 - Note-on particles and expanding ripples; ambient drifting motes.
+- A full-stage oscilloscope mode with a grid, delayed trace, bright trace and
+  scanline. It uses the same analyser as the orb.
+- Per-preset motion signatures: Glass shimmers, Tape drags, Haze drifts, Pulse
+  snaps, Bloom breathes.
 - Canvas loop stops when reduced motion is requested or the stage leaves the
-  viewport. The reduced-motion scene is a calm static orb with a DOM level
-  meter.
+  viewport. The reduced-motion scene is a calm static orb or scope with a DOM
+  level meter.
 
 **Demo**
 - A fixed chorus arrangement of “Goodness of God” in C: one intro bar plus
@@ -141,7 +150,10 @@ the gag is visual-only. The About dialog has a small hint.
   announces its BPM value.
 - Keyboard notes stay live after clicking a button or link; they are suppressed
   only while a text field, range control or dialog has focus.
-- Pointer events support multi-touch pads, capture, and idle cancellation.
+- Pointer events support multi-touch pads, capture, glissando and idle
+  cancellation.
+- The preset, filter, echo, space, tempo, arp and orb / scope settings persist
+  locally; invalid stored values are ignored.
 
 ## Structure
 
@@ -162,11 +174,9 @@ synthesized at runtime.
 
 ## Roadmap
 
-Two candidate next passes, roughly in order of leverage:
+One candidate next pass:
 
-1. **Visual polish.** An oscilloscope mode, per-preset motion signatures,
-   pointer glissando across pads, and further mobile layout refinements.
-2. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
+1. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
    the existing engine and keybed.
 
 ## Rough edges
@@ -179,7 +189,8 @@ Two candidate next passes, roughly in order of leverage:
 - Recording uses the browser's `MediaRecorder` container; there is no WAV
   export or server-side sharing. Takes are session-only.
 - The circular spectrum maps lower frequencies to more ticks for looks, not
-  scientific accuracy.
+  scientific accuracy; the scope is likewise a stylized view, not a calibrated
+  measurement.
 - The synth has been built and interaction-tested headlessly; the audio graph
   has not been tuned on every output device.
 - The About dialog is the whole "product" story — there is no downstream app,
