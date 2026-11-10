@@ -1,5 +1,7 @@
 # Wave — the playable synth
 
+**Live demo:** https://jimmerioles.github.io/wave/
+
 A landing page for a browser synthesizer where the hero is the instrument.
 Hold a key or tap a pad, and the orb, rings, particles and meters answer the
 sound you make. No video, no waveform loop, no samples.
