@@ -10,23 +10,32 @@
  */
 
 export interface WaveNote {
-  /** Physical key on a QWERTY keyboard. */
+  /** Physical key on a QWERTY keyboard, or "demo" for demo-only notes. */
   key: string;
   /** Note name, e.g. C3. */
   name: string;
   frequency: number;
+  /** The demo uses this note, but the keybed has no pad for it. */
+  demoOnly?: boolean;
 }
 
 export const NOTES: WaveNote[] = [
   { key: "A", name: "C3", frequency: 130.81 },
   { key: "S", name: "D3", frequency: 146.83 },
   { key: "D", name: "E3", frequency: 164.81 },
-  { key: "F", name: "G3", frequency: 196.0 },
-  { key: "G", name: "A3", frequency: 220.0 },
-  { key: "H", name: "C4", frequency: 261.63 },
-  { key: "J", name: "D4", frequency: 293.66 },
-  { key: "K", name: "E4", frequency: 329.63 },
+  { key: "F", name: "F3", frequency: 174.61 },
+  { key: "G", name: "G3", frequency: 196.0 },
+  { key: "H", name: "A3", frequency: 220.0 },
+  { key: "J", name: "B3", frequency: 246.94 },
+  { key: "K", name: "C4", frequency: 261.63 },
+  // The demo's chorus needs two notes above the keybed. They stay out of the
+  // pad layout so the instrument keeps its eight-key, one-octave shape.
+  { key: "demo", name: "D4", frequency: 293.66, demoOnly: true },
+  { key: "demo", name: "E4", frequency: 329.63, demoOnly: true },
 ];
+
+/** How many notes the playable keybed exposes. */
+export const KEYBED_SIZE = 8;
 
 export type PresetKey = "bloom" | "glass" | "tape";
 
@@ -347,11 +356,11 @@ export class SynthEngine {
     this.voices.set(noteIndex, voice);
   }
 
-  noteOff(noteIndex: number): void {
+  noteOff(noteIndex: number, release?: number): void {
     const voice = this.voices.get(noteIndex);
     if (!voice) return;
     this.voices.delete(noteIndex);
-    this.releaseVoice(voice, this.preset.release);
+    this.releaseVoice(voice, release ?? this.preset.release);
   }
 
   /** Short fade-out for every voice, used when the page is hidden. */

@@ -1,5 +1,6 @@
 import "./style.css";
 import {
+  KEYBED_SIZE,
   NOTES,
   PRESETS,
   cutoffFromSlider,
@@ -56,11 +57,12 @@ const activeSources = new Map<string, number>();
 const noteCounts = new Array<number>(NOTES.length).fill(0);
 const heldKeys = new Set<string>();
 const pads: HTMLButtonElement[] = [];
+const padNotes = NOTES.slice(0, KEYBED_SIZE);
 let lastNote = -1;
 let readoutTimer: number | null = null;
 
 function buildKeybed(): void {
-  NOTES.forEach((note, index) => {
+  padNotes.forEach((note, index) => {
     const pad = document.createElement("button");
     pad.type = "button";
     pad.className = "pad";
@@ -156,8 +158,9 @@ function setReadout(noteIndex: number): void {
 
   noteReadout.textContent = note.name;
   const voices = activeSources.size;
+  const label = note.demoOnly ? "demo" : note.key;
   noteSub.textContent =
-    voices > 1 ? `${note.key} · ${voices} voices` : `${note.key} · held`;
+    voices > 1 ? `${label} · ${voices} voices` : `${label} · held`;
   noteReadout.classList.add("is-live");
 }
 
@@ -191,7 +194,7 @@ function press(noteIndex: number, source: string, velocity = 1): void {
   syncPlayingState();
 }
 
-function release(source: string): void {
+function release(source: string, releaseSeconds?: number): void {
   const noteIndex = activeSources.get(source);
   if (noteIndex === undefined) return;
 
@@ -199,7 +202,7 @@ function release(source: string): void {
   noteCounts[noteIndex] = Math.max(0, (noteCounts[noteIndex] ?? 1) - 1);
 
   if (noteCounts[noteIndex] === 0) {
-    engine.noteOff(noteIndex);
+    engine.noteOff(noteIndex, releaseSeconds);
     setPadState(noteIndex, false);
   }
 
@@ -302,64 +305,99 @@ cutoff.addEventListener("input", syncCutoff);
 delay.addEventListener("input", syncEcho);
 
 /* -------------------------------------------------------------------------
-   Demo melody
+   Demo: the chorus of "Goodness of God"
+
+   A fixed, hand-arranged excerpt. The melody is written in C so it fits the
+   C-major keybed; the two top notes (D4/E4) are demo-only. Bass roots sit
+   under the melody to imply the F – C – G – Am progression. 4/4 at 63 BPM,
+   one intro bar then eight chorus bars.
    ------------------------------------------------------------------------- */
 
-const STEP_MS = 250;
-const DEMO_CONTOUR: ReadonlyArray<ReadonlyArray<number>> = [
-  [0],
-  [2],
-  [4],
-  [3],
-  [2, 5],
-  [],
-  [4],
-  [6],
-  [5],
-  [4],
-  [2],
-  [3],
-  [1],
-  [0, 4],
-  [],
-  [3],
-  [5],
-  [7],
-  [6],
-  [4],
-  [3, 6],
-  [2],
-  [4],
-  [5],
-  [3],
-  [1],
-  [2],
-  [0, 5],
-  [],
-  [4],
-  [2],
-  [3, 0],
+const DEMO_BPM = 63;
+const BEAT_MS = 60000 / DEMO_BPM;
+
+const N = {
+  C3: 0,
+  D3: 1,
+  E3: 2,
+  F3: 3,
+  G3: 4,
+  A3: 5,
+  B3: 6,
+  C4: 7,
+  D4: 8,
+  E4: 9,
+} as const;
+
+/** [start beat, note index, length in beats, velocity] */
+type DemoEvent = readonly [number, number, number, number?];
+
+const DEMO_NOTES: readonly DemoEvent[] = [
+  // Intro: one C-major bar, left to ring.
+  [0, N.C3, 3.5, 0.5],
+  [0.5, N.E3, 3, 0.46],
+  [1, N.G3, 2.5, 0.44],
+  [1.5, N.C4, 2, 0.4],
+
+  // "All my life You have been faithful"
+  [5, N.C4, 0.45],
+  [5.5, N.C4, 0.45],
+  [6, N.C4, 0.9],
+  [7, N.B3, 0.45],
+  [7.5, N.B3, 0.45],
+  [8, N.A3, 0.45],
+  [8.5, N.G3, 0.45],
+  [9, N.C4, 2.5],
+  [5, N.F3, 3.5, 0.5],
+  [9, N.C3, 2.5, 0.48],
+
+  // "All my life You have been so, so good"
+  [13, N.C4, 0.45],
+  [13.5, N.C4, 0.45],
+  [14, N.C4, 0.9],
+  [15, N.B3, 0.45],
+  [15.5, N.B3, 0.45],
+  [16, N.A3, 0.45],
+  [16.5, N.G3, 0.45],
+  [17, N.C4, 0.45],
+  [17.5, N.D4, 1.5],
+  [13, N.F3, 3, 0.5],
+  [16, N.C3, 1.5, 0.48],
+  [17.5, N.D3, 1.2, 0.46],
+
+  // "With every breath that I am able"
+  [21, N.C4, 0.45],
+  [21.5, N.C4, 0.45],
+  [22, N.C4, 0.45],
+  [22.5, N.C4, 0.45],
+  [23, N.B3, 0.45],
+  [23.5, N.B3, 0.45],
+  [24, N.A3, 0.45],
+  [24.5, N.G3, 0.45],
+  [25, N.C4, 1.5],
+  [21, N.F3, 2, 0.5],
+  [23, N.C3, 2, 0.48],
+  [25, N.E3, 2, 0.44],
+
+  // "I will sing of the goodness of God"
+  [29, N.E4, 0.45],
+  [29.5, N.D4, 0.45],
+  [30, N.C4, 0.45],
+  [30.5, N.D4, 0.45],
+  [31, N.E4, 0.45],
+  [31.5, N.E4, 0.45],
+  [32, N.D4, 0.45],
+  [32.5, N.C4, 0.45],
+  [33, N.C4, 2.5],
+  [29, N.F3, 2, 0.5],
+  [31, N.D3, 2, 0.46],
+  [33, N.C3, 2.5, 0.48],
 ];
-const DEMO_LENGTH = DEMO_CONTOUR.length * STEP_MS;
 
-/** A light variation on the contour: same shape, different weather. */
-function createDemoSequence(): number[][] {
-  return DEMO_CONTOUR.map((notes, step) => {
-    const shaped = notes.map((note) => {
-      if (Math.random() < 0.16) {
-        const direction = Math.random() < 0.5 ? -1 : 1;
-        return Math.max(0, Math.min(NOTES.length - 1, note + direction));
-      }
-      return note;
-    });
-
-    if (shaped.length > 0 && step % 8 === 6 && Math.random() < 0.45) {
-      shaped.push(4 + Math.floor(Math.random() * 4));
-    }
-
-    return [...new Set(shaped)];
-  });
-}
+const DEMO_BEATS = 36;
+const DEMO_LENGTH = DEMO_BEATS * BEAT_MS;
+/** A shorter release keeps the demo melody legible against the pad presets. */
+const DEMO_RELEASE = 0.38;
 
 let demoTimers: number[] = [];
 let demoPlaying = false;
@@ -370,10 +408,12 @@ function setDemoUi(playing: boolean): void {
   demoButton.setAttribute("aria-pressed", String(playing));
   demoButton.setAttribute(
     "aria-label",
-    playing ? "Stop the demo melody" : "Play a short demo melody",
+    playing ? "Stop the demo" : "Play the chorus of Goodness of God",
   );
-  demoLabel.textContent = playing ? "Stop demo" : "Play a demo";
-  demoSub.textContent = playing ? "Playing · generative" : "8 seconds · generative";
+  demoLabel.textContent = playing ? "Stop demo" : "Play the chorus";
+  demoSub.textContent = playing
+    ? "Goodness of God · chorus"
+    : "Goodness of God · 34s";
   syncPlayingState();
 }
 
@@ -387,29 +427,28 @@ function startDemo(): void {
   demoRun++;
   const run = demoRun;
   demoPlaying = true;
-  setDemoUi(true);
   demoButton.style.setProperty("--demo-ms", `${DEMO_LENGTH}ms`);
+  setDemoUi(true);
 
-  const sequence = createDemoSequence();
-  sequence.forEach((notes, step) => {
-    if (notes.length === 0) return;
+  // Bass first on shared downbeats so the readout features the melody.
+  const events = [...DEMO_NOTES].sort(
+    (a, b) => a[0] - b[0] || (a[3] ?? 0.72) - (b[3] ?? 0.72),
+  );
+  events.forEach(([start, noteIndex, length, velocity], index) => {
+    const source = `demo:${run}:${index}`;
 
-    const at = step * STEP_MS + 40;
     demoTimers.push(
       window.setTimeout(() => {
         if (!demoPlaying || run !== demoRun) return;
-        notes.forEach((noteIndex, chordIndex) => {
-          const source = `demo:${run}:${step}:${chordIndex}`;
-          const velocity = 0.64 + Math.random() * 0.28;
-          press(noteIndex, source, velocity);
-          demoTimers.push(
-            window.setTimeout(
-              () => release(source),
-              300 + Math.random() * 150 + chordIndex * 60,
-            ),
-          );
-        });
-      }, at),
+        press(noteIndex, source, velocity ?? 0.72);
+      }, start * BEAT_MS + 40),
+    );
+
+    demoTimers.push(
+      window.setTimeout(
+        () => release(source, DEMO_RELEASE),
+        (start + length) * BEAT_MS + 40,
+      ),
     );
   });
 

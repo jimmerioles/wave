@@ -6,6 +6,10 @@ A landing page for a browser synthesizer where the hero is the instrument.
 Hold a key or tap a pad, and the orb, rings, particles and meters answer the
 sound you make. No video, no waveform loop, no samples.
 
+The demo button plays a short, synthesized arrangement of the chorus of
+“Goodness of God” — melody and bass, scheduled through the same eight-voice
+instrument you play by hand.
+
 ![Wave — the playable synth](docs/wave-idle.webp)
 
 Wave is one of five prototype studies in high-craft interactive landing pages:
@@ -23,20 +27,22 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 
 ```bash
 npm run build     # type-check + production build
-npm run preview   # serve the production build
+npm run preview   # serve the production build at /wave/
 ```
 
 ## Play it
 
-- **Hold** `A` `S` `D` `F` `G` `H` `J` `K`, or press and hold any pad.
+- **Hold** `A` `S` `D` `F` `G` `H` `J` `K`, or press and hold any pad. The
+  pads cover a full C-major scale from C3 to C4.
 - **Bloom / Glass / Tape** change the oscillator mix, filter, envelope and
   delay character — and tint the orb to match.
 - **Filter** sweeps the shared low-pass cutoff. **Echo** controls how much of
   the ping-pong delay returns.
-- **Play a demo** performs an 8-second generative phrase. Each run varies the
-  melody slightly. `Esc` stops it early.
+- **Play the chorus** performs a 34-second arrangement of “Goodness of God”.
+  The demo adds two high notes above the keybed for the chorus lift. `Esc`
+  stops it early.
 - **Sound on** mutes and unmutes. The visualizer keeps reacting while muted.
-- **About** opens a short prototype note.
+- **About** opens a short prototype note and the demo credit.
 
 Audio starts only after the first pointer or key gesture. Nothing autoplays.
 The master output is intentionally low (0.2) and compressed.
@@ -64,6 +70,12 @@ The master output is intentionally low (0.2) and compressed.
   viewport. The reduced-motion scene is a calm static orb with a DOM level
   meter.
 
+**Demo**
+- A fixed chorus arrangement of “Goodness of God” in C: 63 BPM, one intro
+  bar plus eight chorus bars, melody and bass scheduled into the live synth.
+- The keybed exposes eight pads (C3–C4). The demo uses two extra high notes
+  (D4/E4) internally for the chorus lift; they have no pads.
+
 **Page**
 - Typography: Space Grotesk + Instrument Serif accents + JetBrains Mono.
 - Deep navy field, coral sunset hero, mint/cyan signal accents.
@@ -89,16 +101,38 @@ There are no runtime dependencies beyond Vite and TypeScript. Fonts come from
 Google Fonts; everything visual is CSS, SVG or Canvas, and every sound is
 synthesized at runtime.
 
-## Rough edges / next steps
+## Roadmap
 
-- The demo is a varied contour, not a full sequencer. There is no tempo control,
-  loop length or timeline editing.
-- No reverb, arpeggiator, MIDI input, recording/export, or preset saving yet.
+Five candidate next passes, roughly in order of leverage:
+
+1. **Arpeggiator + tempo.** A latch/hold arpeggiator with rate control and
+   up/down/random patterns would turn the pads into a playable pattern engine
+   and give the demo tempo and pattern controls.
+2. **Record & share a loop.** Record the master output with `MediaRecorder`,
+   preview the take, and download a shareable WebM/WAV clip.
+3. **Sound design pass.** Add a reverb, a couple more presets, and persist the
+   chosen preset, filter and echo values in `localStorage`.
+4. **Visual polish.** An oscilloscope mode, per-preset motion signatures,
+   pointer glissando across pads, and further mobile layout refinements.
+5. **MIDI input.** Web MIDI detection with note-on/off and velocity mapped into
+   the existing engine and keybed.
+
+## Rough edges
+
+- The demo is a fixed chorus arrangement, not a full song player or sequencer.
+  There is no tempo control, loop length or timeline editing.
+- The keybed is one octave. The demo reaches two notes above it internally, but
+  those notes are not playable from the pads.
 - The circular spectrum maps lower frequencies to more ticks for looks, not
   scientific accuracy.
 - The synth has been built and interaction-tested headlessly; the audio graph
   has not been tuned on every output device.
 - The About dialog is the whole "product" story — there is no downstream app,
   pricing or docs page behind the prototype.
-- Possible next pass: add a simple oscilloscope mode, per-preset motion
-  signatures, pointer glissando across pads, and a shareable recorded loop.
+
+## Credits
+
+“Goodness of God” (CCLI #7117726) words and music by Jenn Johnson, Jason
+Ingram, Ben Fielding, Ed Cash and Brian Johnson. The demo is a short
+synthesized arrangement used for this prototype; all rights belong to the
+writers and publishers.

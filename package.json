@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --base /wave/"
   },
   "devDependencies": {
     "typescript": "^5.7.2",
