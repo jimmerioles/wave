@@ -90,3 +90,11 @@ export function saveSettings(settings: StoredSettings): void {
     /* Storage is a nicety; the instrument still works without it. */
   }
 }
+
+export function clearSettings(): void {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* Storage is a nicety; the instrument still works without it. */
+  }
+}

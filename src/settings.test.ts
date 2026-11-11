@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadSettings, saveSettings, type StoredSettings } from "./settings";
+import {
+  clearSettings,
+  loadSettings,
+  saveSettings,
+  type StoredSettings,
+} from "./settings";
 
 const KEY = "wave:settings:v1";
 
@@ -60,6 +65,13 @@ describe("settings persistence", () => {
     saveSettings(full);
     expect(storage.getItem(KEY)).not.toBeNull();
     expect(loadSettings()).toEqual(full);
+  });
+
+  it("clears stored settings", () => {
+    useStorage();
+    saveSettings(full);
+    clearSettings();
+    expect(loadSettings()).toEqual({});
   });
 
   it("starts empty when nothing is stored", () => {

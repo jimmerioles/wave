@@ -59,7 +59,9 @@ npm run preview   # serve the production build at /wave/
 - **Rec** records the master mix into a take. Click it again to stop; the take
   dialog previews the clip and offers a download. `Esc` also stops a recording.
 - **Sound on** mutes and unmutes. The visualizer keeps reacting while muted.
-- **About** opens a short prototype note and the demo credit.
+- **About** opens a short prototype note and the demo credit. The dialog also
+  has **Reset instrument**, which restores Bloom, the default filter/echo/space,
+  63 BPM, arp off and Orb view, and clears the saved settings.
 
 Audio starts only after the first pointer or key gesture. Nothing autoplays.
 The master output is intentionally low (0.2) and compressed.
@@ -170,6 +172,8 @@ the gag is visual-only. The About dialog has a small hint.
   cancellation.
 - The preset, filter, echo, space, tempo, arp and orb / scope settings persist
   locally; invalid stored values are ignored.
+- About includes a one-click reset that clears the persisted settings and
+  restores the default instrument.
 
 ## Structure
 

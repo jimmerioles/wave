@@ -16,6 +16,7 @@ import {
   type ArpRate,
 } from "./arp";
 import {
+  clearSettings,
   loadSettings,
   saveSettings,
   type StoredSettings,
@@ -93,6 +94,7 @@ const presetButtons = Array.from(
 const about = must<HTMLDialogElement>("#about");
 const aboutOpen = must<HTMLButtonElement>("#about-open");
 const aboutClose = must<HTMLButtonElement>("#about-close");
+const resetInstrumentButton = must<HTMLButtonElement>("#reset-instrument");
 const brand = must<HTMLAnchorElement>(".brand");
 const eggToast = must<HTMLElement>("#egg-toast");
 
@@ -1670,6 +1672,44 @@ aboutClose.addEventListener("click", () => {
 about.addEventListener("click", (event) => {
   if (event.target === about) about.close();
 });
+
+function resetInstrument(): void {
+  stopDemo();
+  stopEgg();
+  releaseAll();
+
+  arp.setEnabled(false);
+  arp.setLatch(false);
+  arp.setPattern("up");
+  arp.setRate("1/8");
+  arpChord = [];
+
+  applyPreset("bloom", true);
+  tempoInput.value = "63";
+  syncTempo();
+  setViewMode("orb", false);
+  syncArpUi();
+
+  if (readoutTimer !== null) {
+    clearTimeout(readoutTimer);
+    readoutTimer = null;
+  }
+  lastNote = -1;
+  noteReadout.textContent = "—";
+  noteSub.textContent = "hold a key";
+  noteReadout.classList.remove("is-live");
+
+  if (persistTimer !== null) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  clearSettings();
+  syncPlayingState();
+  setEggToast("instrument reset", true, 2600);
+  about.close();
+}
+
+resetInstrumentButton.addEventListener("click", resetInstrument);
 
 /* -------------------------------------------------------------------------
    Computer keyboard
