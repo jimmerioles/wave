@@ -6,9 +6,9 @@ A landing page for a browser synthesizer where the hero is the instrument.
 Hold a key or tap a pad, and the orb, rings, particles and meters answer the
 sound you make. No video, no waveform loop, no samples.
 
-The demo button plays a short, synthesized arrangement of the chorus of
-“Goodness of God” — melody and bass, scheduled through the same eight-voice
-instrument you play by hand.
+The demo button plays *First Light*, an original 12-bar cue composed for Wave —
+a quiet chord, an arpeggio, a hook, one hanging high note and a final chord, all
+scheduled through the same eight-voice instrument you play by hand.
 
 ![Wave — the playable synth](docs/wave-idle.webp)
 
@@ -39,8 +39,9 @@ npm run preview   # serve the production build at /wave/
   set the rate to 1/4, 1/8, 1/16 or 1/8T, and use **Latch** to keep the chord
   running after you let go. Starting a new chord replaces the latched one.
   `Esc` stops the pattern.
-- **Tempo** sets the shared clock, 50–160 BPM. It drives both the arp and the
-  demo; the demo's duration label updates before the next play.
+- **Tempo** sets the shared clock, 50–160 BPM; the default is 100. It drives
+  both the arp and the demo, and the demo's duration label updates before the
+  next play.
 - **Bloom / Glass / Tape / Haze / Pulse** change the oscillator mix, filter,
   envelope, delay and reverb character — and tint the orb to match. Each preset
   also has its own motion signature.
@@ -53,15 +54,17 @@ npm run preview   # serve the production build at /wave/
   pads, and notes outside the keybed still play. MIDI can also feed the arp.
 - **Filter** sweeps the shared low-pass cutoff. **Echo** controls how much of
   the ping-pong delay returns. **Space** sets the shared reverb return.
-- **Play the chorus** performs an arrangement of “Goodness of God” at the
-  current tempo. The demo adds two high notes above the keybed for the chorus
-  lift. `Esc` stops it early.
+- **Play First Light** performs the original 12-bar Wave cue at the current
+  tempo: two ignition bars, four pulse bars, four lift bars, one breath and one
+  resolve. The demo rides the filter and keeps its hook on the eight pads; D4
+  and E4 add color above the keybed, with E4 saved for the opening ping and the
+  climax. `Esc` stops it early.
 - **Rec** records the master mix into a take. Click it again to stop; the take
   dialog previews the clip and offers a download. `Esc` also stops a recording.
 - **Sound on** mutes and unmutes. The visualizer keeps reacting while muted.
 - **About** opens a short prototype note and the demo credit. The dialog also
   has **Reset instrument**, which restores Bloom, the default filter/echo/space,
-  63 BPM, arp off and Orb view, and clears the saved settings.
+  100 BPM, arp off and Orb view, and clears the saved settings.
 
 Audio starts only after the first pointer or key gesture. Nothing autoplays.
 The master output is intentionally low (0.2) and compressed.
@@ -109,11 +112,15 @@ the gag is visual-only. The About dialog has a small hint.
   level meter.
 
 **Demo**
-- A fixed chorus arrangement of “Goodness of God” in C: one intro bar plus
-  eight chorus bars, melody and bass scheduled into the live synth.
-- The tempo control retimes the arrangement; the default is 63 BPM. The keybed
-  exposes eight pads (C3–C4). The demo uses two extra high notes (D4/E4)
-  internally for the chorus lift; they have no pads.
+- “First Light,” an original 12-bar cue in C: two ignition bars, four pulse
+  bars, four lift bars, one breath and one resolve. Melody, chords, bass and a
+  scheduled arpeggio are played through the live synth.
+- The filter rides the arrangement (22% → 82% → 34%) so the stage opens and
+  closes with the cue. Touching the filter or changing a preset hands control
+  back to the player.
+- The tempo control retimes the cue before the next play; the default is
+  100 BPM. The hook stays on the eight pads (C3–C4); D4/E4 add color above the
+  keybed, with E4 saved for the opening ping and the climax.
 
 **Arp**
 - A lookahead scheduler drives the arp from `AudioContext.currentTime`, not
@@ -123,7 +130,7 @@ the gag is visual-only. The About dialog has a small hint.
 - Held and latched pads light the current step; latched notes keep a warm
   outline after release. The arp and demo are mutually exclusive.
 - The demo uses the same tempo clock: changing tempo before pressing play
-  retimes the whole chorus.
+  retimes the whole cue.
 
 **Recording**
 - `MediaRecorder` taps the master bus before the mute gain, so a take can be
@@ -203,8 +210,9 @@ npm run test:watch
 
 The unit suite covers settings validation and persistence, MIDI message parsing
 and note-to-pad mapping, arp pattern/rate math, and the cutoff/frequency
-helpers. The visualizer, audio timbre, MediaRecorder output and physical MIDI
-devices remain manual/browser checks; they are not pixel- or device-tested.
+helpers. The visualizer, audio timbre, demo timing and filter ride,
+MediaRecorder output and physical MIDI devices remain manual/browser checks;
+they are not pixel- or device-tested.
 
 ## Roadmap
 
@@ -214,10 +222,10 @@ The “Rough edges” below are the honest next candidates.
 
 ## Rough edges
 
-- The demo is a fixed chorus arrangement, not a full song player or sequencer.
-  Tempo is adjustable, but there is no loop length or timeline editing.
-- The keybed is one octave. The demo reaches two notes above it internally, but
-  those notes are not playable from the pads.
+- The demo is a fixed 12-bar cue, not a full song player or sequencer. Tempo is
+  adjustable, but there is no loop length or timeline editing.
+- The keybed is one octave. The demo uses D4/E4 internally for color and the
+  climax, but those notes are not playable from the pads.
 - The arp is monophonic per step and has no swing or per-step editing yet.
 - Recording uses the browser's `MediaRecorder` container; there is no WAV
   export or server-side sharing. Takes are session-only.
@@ -236,10 +244,7 @@ The “Rough edges” below are the honest next candidates.
 
 ## Credits
 
-“Goodness of God” (CCLI #7117726) words and music by Jenn Johnson, Jason
-Ingram, Ben Fielding, Ed Cash and Brian Johnson. The demo is a short
-synthesized arrangement used for this prototype; all rights belong to the
-writers and publishers.
+“First Light” is an original composition for this prototype.
 
 “Never Gonna Give You Up” was performed by Rick Astley and written by Mike
 Stock, Matt Aitken and Pete Waterman. The easter egg is a short synthesized

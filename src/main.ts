@@ -133,7 +133,7 @@ let readoutTimer: number | null = null;
 let arpStepNote = -1;
 let arpStepTimer: number | null = null;
 let arpChord: number[] = [];
-let tempo = 63;
+let tempo = 100;
 interface RecordingSession {
   recorder: MediaRecorder;
   chunks: BlobPart[];
@@ -713,6 +713,8 @@ function syncTempo(): void {
 }
 
 function applyPreset(key: PresetKey, syncControls = true): void {
+  // A preset click takes the filter back from the demo's automation.
+  releaseDemoFilter();
   const preset = PRESETS[key];
   currentPreset = key;
 
@@ -749,18 +751,23 @@ for (const button of presetButtons) {
   });
 }
 
-cutoff.addEventListener("input", syncCutoff);
+cutoff.addEventListener("input", () => {
+  // A hand on the filter takes the demo's automation off the rails.
+  releaseDemoFilter();
+  syncCutoff();
+});
 delay.addEventListener("input", syncEcho);
 space.addEventListener("input", syncSpace);
 tempoInput.addEventListener("input", syncTempo);
 
 /* -------------------------------------------------------------------------
-   Demo: the chorus of "Goodness of God"
+   Demo: "First Light"
 
-   A fixed, hand-arranged excerpt. The melody is written in C so it fits the
-   C-major keybed; the two top notes (D4/E4) are demo-only. Bass roots sit
-   under the melody to imply the F – C – G – Am progression. 4/4, one intro
-   bar then eight chorus bars. The default tempo is 63 BPM.
+   An original 12-bar cue written for the instrument, in C major / A minor.
+   It wakes on an A minor chord, builds through four arpeggiated bars, lifts
+   into the hook, leaves one high E4 hanging, then resolves on a full Cadd9.
+   The melody stays inside the eight pads; D4/E4 add color above the keybed,
+   with E4 saved for the opening ping and the climax. Default tempo: 100 BPM.
    ------------------------------------------------------------------------- */
 
 const N = {
@@ -776,74 +783,127 @@ const N = {
   E4: 9,
 } as const;
 
-/** [start beat, note index, length in beats, velocity] */
-type DemoEvent = readonly [number, number, number, number?];
+/** [start beat, note index, length in beats, velocity, release seconds] */
+type DemoEvent = readonly [number, number, number, number?, number?];
 
 const DEMO_NOTES: readonly DemoEvent[] = [
-  // Intro: one C-major bar, left to ring.
-  [0, N.C3, 3.5, 0.5],
-  [0.5, N.E3, 3, 0.46],
-  [1, N.G3, 2.5, 0.44],
-  [1.5, N.C4, 2, 0.4],
+  // Ignition: an A minor chord in the dark, a distant E4, then the 7th.
+  [0, N.A3, 7.4, 0.46, 0.9],
+  [0, N.E3, 7.4, 0.42, 0.9],
+  [0, N.C4, 7.4, 0.38, 0.9],
+  [2, N.E4, 1.6, 0.32, 1.2],
+  [4, N.G3, 3.4, 0.36, 0.8],
 
-  // "All my life You have been faithful"
-  [5, N.C4, 0.45],
-  [5.5, N.C4, 0.45],
-  [6, N.C4, 0.9],
-  [7, N.B3, 0.45],
-  [7.5, N.B3, 0.45],
-  [8, N.A3, 0.45],
-  [8.5, N.G3, 0.45],
-  [9, N.C4, 2.5],
-  [5, N.F3, 3.5, 0.5],
-  [9, N.C3, 2.5, 0.48],
+  // Pulse: Am7 – F – C – G, bass roots and an eighth-note arp. The last two
+  // beats of the G bar double to sixteenths, pulling into the lift.
+  [8, N.A3, 3.4, 0.5, 0.3],
+  [8, N.E3, 0.42, 0.34, 0.18],
+  [8.5, N.C4, 0.42, 0.38, 0.18],
+  [9, N.G3, 0.42, 0.32, 0.18],
+  [9.5, N.C4, 0.42, 0.38, 0.18],
+  [10, N.E3, 0.42, 0.34, 0.18],
+  [10.5, N.G3, 0.42, 0.32, 0.18],
+  [11, N.C4, 0.42, 0.38, 0.18],
+  [11.5, N.E3, 0.42, 0.34, 0.18],
 
-  // "All my life You have been so, so good"
-  [13, N.C4, 0.45],
-  [13.5, N.C4, 0.45],
-  [14, N.C4, 0.9],
-  [15, N.B3, 0.45],
-  [15.5, N.B3, 0.45],
-  [16, N.A3, 0.45],
-  [16.5, N.G3, 0.45],
-  [17, N.C4, 0.45],
-  [17.5, N.D4, 1.5],
-  [13, N.F3, 3, 0.5],
-  [16, N.C3, 1.5, 0.48],
-  [17.5, N.D3, 1.2, 0.46],
+  [12, N.F3, 3.4, 0.5, 0.3],
+  [12, N.C4, 0.42, 0.36, 0.18],
+  [12.5, N.A3, 0.42, 0.32, 0.18],
+  [13, N.C4, 0.42, 0.36, 0.18],
+  [13.5, N.G3, 0.42, 0.3, 0.18],
+  [14, N.A3, 0.42, 0.32, 0.18],
+  [14.5, N.C4, 0.42, 0.36, 0.18],
+  [15, N.G3, 0.42, 0.3, 0.18],
+  [15.5, N.A3, 0.42, 0.32, 0.18],
 
-  // "With every breath that I am able"
-  [21, N.C4, 0.45],
-  [21.5, N.C4, 0.45],
-  [22, N.C4, 0.45],
-  [22.5, N.C4, 0.45],
-  [23, N.B3, 0.45],
-  [23.5, N.B3, 0.45],
-  [24, N.A3, 0.45],
-  [24.5, N.G3, 0.45],
-  [25, N.C4, 1.5],
-  [21, N.F3, 2, 0.5],
-  [23, N.C3, 2, 0.48],
-  [25, N.E3, 2, 0.44],
+  [16, N.C3, 3.4, 0.52, 0.3],
+  [16, N.G3, 0.42, 0.34, 0.18],
+  [16.5, N.E3, 0.42, 0.32, 0.18],
+  [17, N.C4, 0.42, 0.38, 0.18],
+  [17.5, N.G3, 0.42, 0.34, 0.18],
+  [18, N.E3, 0.42, 0.32, 0.18],
+  [18.5, N.C4, 0.42, 0.38, 0.18],
+  [19, N.G3, 0.42, 0.34, 0.18],
+  [19.5, N.E3, 0.42, 0.32, 0.18],
 
-  // "I will sing of the goodness of God"
-  [29, N.E4, 0.45],
-  [29.5, N.D4, 0.45],
-  [30, N.C4, 0.45],
-  [30.5, N.D4, 0.45],
-  [31, N.E4, 0.45],
-  [31.5, N.E4, 0.45],
-  [32, N.D4, 0.45],
-  [32.5, N.C4, 0.45],
-  [33, N.C4, 2.5],
-  [29, N.F3, 2, 0.5],
-  [31, N.D3, 2, 0.46],
-  [33, N.C3, 2.5, 0.48],
+  [20, N.G3, 3.4, 0.5, 0.3],
+  [20, N.D3, 0.42, 0.32, 0.18],
+  [20.5, N.B3, 0.42, 0.34, 0.18],
+  [21, N.E3, 0.42, 0.3, 0.18],
+  [21.5, N.B3, 0.42, 0.34, 0.18],
+  [22, N.D3, 0.36, 0.32, 0.15],
+  [22.25, N.B3, 0.36, 0.34, 0.15],
+  [22.5, N.E3, 0.36, 0.3, 0.15],
+  [22.75, N.B3, 0.36, 0.34, 0.15],
+  [23, N.D3, 0.36, 0.32, 0.15],
+  [23.25, N.E3, 0.36, 0.3, 0.15],
+  [23.5, N.B3, 0.36, 0.34, 0.15],
+  [23.75, N.D3, 0.36, 0.32, 0.15],
+
+  // Lift: F – G – Am – F. The bass takes the inversion that leaves the melody
+  // free: F/C, G/D, Am/E, F/C. Chords are short stabs so the hook can breathe.
+  [24, N.F3, 2.2, 0.48, 0.5],
+  [24, N.C3, 1.8, 0.34, 0.4],
+  [24, N.G3, 1.8, 0.32, 0.4],
+  [24, N.A3, 1.0, 0.55, 0.35],
+  [25, N.C4, 0.5, 0.5, 0.3],
+  [25.5, N.A3, 0.5, 0.48, 0.3],
+  [26, N.G3, 2.0, 0.52, 0.35],
+
+  [28, N.D3, 3.4, 0.46, 0.5],
+  [28, N.B3, 0.8, 0.3, 0.25],
+  [28, N.E3, 1.8, 0.28, 0.4],
+  [28, N.G3, 1.0, 0.55, 0.35],
+  [29, N.B3, 0.5, 0.5, 0.3],
+  [29.5, N.A3, 0.5, 0.48, 0.3],
+  [30, N.G3, 2.0, 0.52, 0.35],
+
+  [32, N.E3, 3.4, 0.46, 0.5],
+  [32, N.C3, 1.8, 0.32, 0.4],
+  [32, N.G3, 1.8, 0.3, 0.4],
+  [32, N.A3, 1.0, 0.55, 0.35],
+  [33, N.C4, 0.5, 0.5, 0.3],
+  [33.5, N.B3, 0.5, 0.48, 0.3],
+  [34, N.A3, 2.0, 0.52, 0.35],
+
+  [36, N.C3, 3.4, 0.44, 0.5],
+  [36, N.E3, 1.8, 0.28, 0.4],
+  [36, N.G3, 1.8, 0.3, 0.4],
+  [36, N.F3, 1.0, 0.55, 0.35],
+  [37, N.A3, 0.5, 0.5, 0.3],
+  [37.5, N.C4, 0.5, 0.48, 0.3],
+  [38, N.A3, 2.0, 0.52, 0.35],
+
+  // Breath: G with the high E4 hanging. The bass and chord leave on beat 3;
+  // only the E4 and the reverb remain before the final chord.
+  [40, N.G3, 1.8, 0.5, 0.4],
+  [40, N.D3, 1.8, 0.34, 0.4],
+  [40, N.B3, 1.8, 0.32, 0.4],
+  [40, N.E4, 2.2, 0.6, 1.4],
+
+  // Resolve: Cadd9, full voicing, filter closing across the release.
+  [44, N.C3, 4.0, 0.5, 1.8],
+  [44, N.E3, 4.0, 0.42, 1.8],
+  [44, N.G3, 4.0, 0.4, 1.8],
+  [44, N.C4, 4.0, 0.5, 1.8],
+  [44, N.D4, 3.6, 0.34, 1.8],
+  [44, N.E4, 3.6, 0.36, 1.8],
 ];
 
-const DEMO_BEATS = 36;
-/** A shorter release keeps the demo melody legible against the pad presets. */
+const DEMO_BEATS = 48;
+/** A short release keeps the arp and hook legible against the pad presets. */
 const DEMO_RELEASE = 0.38;
+
+/** [beat, cutoff slider value] — the demo rides the shared filter. */
+const DEMO_FILTER: readonly (readonly [number, number])[] = [
+  [0, 22],
+  [8, 36],
+  [24, 64],
+  [32, 72],
+  [40, 82],
+  [44, 78],
+  [48, 34],
+];
 
 function demoBeatMs(): number {
   return 60000 / tempo;
@@ -854,22 +914,98 @@ function demoDurationMs(): number {
 }
 
 function demoSubText(): string {
-  return `Goodness of God · ${Math.round(demoDurationMs() / 1000)}s`;
+  return `Wave · First Light · ${Math.round(demoDurationMs() / 1000)}s`;
+}
+
+/** The filter value at a beat, linearly interpolated between keyframes. */
+function demoFilterAt(beat: number): number {
+  const first = DEMO_FILTER[0];
+  if (!first || beat <= first[0]) return first?.[1] ?? 22;
+
+  for (let i = 1; i < DEMO_FILTER.length; i++) {
+    const previous = DEMO_FILTER[i - 1];
+    const current = DEMO_FILTER[i];
+    if (!previous || !current) continue;
+    if (beat <= current[0]) {
+      const span = current[0] - previous[0];
+      const t = span > 0 ? (beat - previous[0]) / span : 1;
+      return previous[1] + (current[1] - previous[1]) * t;
+    }
+  }
+
+  return DEMO_FILTER[DEMO_FILTER.length - 1]?.[1] ?? 34;
 }
 
 let demoTimers: number[] = [];
 let demoPlaying = false;
 let demoRun = 0;
+let demoFilterFrame: number | null = null;
+let demoFilterOwned = false;
+let demoFilterBase = 0;
+let demoFilterValue = -1;
+
+/** Paint a cutoff value without saving it; the demo will restore the player's. */
+function previewDemoFilter(value: number): void {
+  cutoff.value = String(value);
+  engine.setCutoff(value);
+  const hz = cutoffFromSlider(value);
+  cutoffOut.textContent = formatHz(hz);
+  cutoff.setAttribute("aria-valuetext", `${formatHz(hz)} cutoff`);
+  paintRange(cutoff);
+}
+
+function cancelDemoFilterFrame(): void {
+  if (demoFilterFrame !== null) {
+    cancelAnimationFrame(demoFilterFrame);
+    demoFilterFrame = null;
+  }
+}
+
+function startDemoFilter(run: number, startMs: number, beatMs: number): void {
+  stopDemoFilter();
+  demoFilterBase = Number(cutoff.value);
+  demoFilterOwned = true;
+  demoFilterValue = -1;
+
+  const tick = (): void => {
+    if (!demoPlaying || run !== demoRun || !demoFilterOwned) return;
+    const beat = (performance.now() - startMs) / beatMs;
+    const value = Math.round(demoFilterAt(beat));
+    if (value !== demoFilterValue) {
+      demoFilterValue = value;
+      previewDemoFilter(value);
+    }
+    demoFilterFrame = requestAnimationFrame(tick);
+  };
+
+  demoFilterFrame = requestAnimationFrame(tick);
+}
+
+/** Stop the filter ride and hand the player's own cutoff back. */
+function stopDemoFilter(): void {
+  cancelDemoFilterFrame();
+  if (!demoFilterOwned) return;
+
+  demoFilterOwned = false;
+  cutoff.value = String(demoFilterBase);
+  syncCutoff();
+}
+
+/** The player took the filter back; keep their value and stop the ride. */
+function releaseDemoFilter(): void {
+  cancelDemoFilterFrame();
+  demoFilterOwned = false;
+}
 
 function setDemoUi(playing: boolean): void {
   demoButton.classList.toggle("is-playing", playing);
   demoButton.setAttribute("aria-pressed", String(playing));
   demoButton.setAttribute(
     "aria-label",
-    playing ? "Stop the demo" : "Play the chorus of Goodness of God",
+    playing ? "Stop the demo" : "Play First Light, the Wave demo",
   );
-  demoLabel.textContent = playing ? "Stop demo" : "Play the chorus";
-  demoSub.textContent = playing ? "Goodness of God · chorus" : demoSubText();
+  demoLabel.textContent = playing ? "Stop demo" : "Play First Light";
+  demoSub.textContent = playing ? "First Light · playing" : demoSubText();
   syncPlayingState();
 }
 
@@ -880,6 +1016,7 @@ function startDemo(): void {
 
   const beatMs = demoBeatMs();
   const totalMs = DEMO_BEATS * beatMs;
+  const startMs = performance.now();
 
   // Reset the progress bar so each run starts from the left.
   demoButton.classList.remove("is-playing");
@@ -890,43 +1027,50 @@ function startDemo(): void {
   demoPlaying = true;
   demoButton.style.setProperty("--demo-ms", `${totalMs}ms`);
   setDemoUi(true);
+  startDemoFilter(run, startMs, beatMs);
 
   // Bass first on shared downbeats so the readout features the melody.
   const events = [...DEMO_NOTES].sort(
     (a, b) => a[0] - b[0] || (a[3] ?? 0.72) - (b[3] ?? 0.72),
   );
-  events.forEach(([start, noteIndex, length, velocity], index) => {
-    const source = `demo:${run}:${index}`;
+  events.forEach(
+    ([start, noteIndex, length, velocity, releaseSeconds], index) => {
+      const source = `demo:${run}:${index}`;
 
-    demoTimers.push(
-      window.setTimeout(() => {
-        if (!demoPlaying || run !== demoRun) return;
-        press(noteIndex, source, velocity ?? 0.72);
-      }, start * beatMs + 40),
-    );
+      demoTimers.push(
+        window.setTimeout(() => {
+          if (!demoPlaying || run !== demoRun) return;
+          press(noteIndex, source, velocity ?? 0.72);
+        }, start * beatMs + 40),
+      );
 
-    demoTimers.push(
-      window.setTimeout(
-        () => release(source, DEMO_RELEASE),
-        (start + length) * beatMs + 40,
-      ),
-    );
-  });
+      demoTimers.push(
+        window.setTimeout(
+          () => release(source, releaseSeconds ?? DEMO_RELEASE),
+          (start + length) * beatMs + 40,
+        ),
+      );
+    },
+  );
 
   demoTimers.push(
     window.setTimeout(() => {
       if (run === demoRun) stopDemo();
-    }, totalMs + 1500),
+    }, totalMs + 2800),
   );
 }
 
 function stopDemo(): void {
-  if (!demoPlaying && demoTimers.length === 0) return;
+  if (!demoPlaying && demoTimers.length === 0) {
+    stopDemoFilter();
+    return;
+  }
 
   demoRun++;
   demoPlaying = false;
   for (const timer of demoTimers) clearTimeout(timer);
   demoTimers = [];
+  stopDemoFilter();
 
   for (const source of [...activeSources.keys()]) {
     if (source.startsWith("demo:")) release(source);
@@ -1685,7 +1829,7 @@ function resetInstrument(): void {
   arpChord = [];
 
   applyPreset("bloom", true);
-  tempoInput.value = "63";
+  tempoInput.value = "100";
   syncTempo();
   setViewMode("orb", false);
   syncArpUi();
