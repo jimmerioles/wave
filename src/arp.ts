@@ -27,6 +27,55 @@ export const ARP_RATE_BEATS: Record<ArpRate, number> = {
   "1/8T": 1 / 3,
 };
 
+/** Seconds per arp step at a given tempo. */
+export function arpStepSeconds(tempo: number, rate: ArpRate): number {
+  return (60 / Math.max(1, tempo)) * ARP_RATE_BEATS[rate];
+}
+
+/**
+ * Pick the next note from the pool. Kept pure so the pattern rules can be
+ * tested without an AudioContext; `random` is injectable for deterministic
+ * tests.
+ */
+export function pickArpNote(
+  pool: readonly number[],
+  pattern: ArpPattern,
+  step: number,
+  lastRandomNote: number,
+  random: () => number = Math.random,
+): number {
+  if (pool.length === 0) {
+    throw new Error("Cannot pick an arp note from an empty pool");
+  }
+
+  const size = pool.length;
+  let index = 0;
+
+  switch (pattern) {
+    case "down":
+      index = size - 1 - (step % size);
+      break;
+    case "updown": {
+      const cycle = Math.max(1, 2 * size - 2);
+      const position = step % cycle;
+      index = position < size ? position : cycle - position;
+      break;
+    }
+    case "random": {
+      index = Math.floor(random() * size);
+      if (size > 1 && pool[index] === lastRandomNote) {
+        index = (index + 1 + Math.floor(random() * (size - 1))) % size;
+      }
+      break;
+    }
+    default:
+      index = step % size;
+      break;
+  }
+
+  return pool[index];
+}
+
 const LOOKAHEAD_SECONDS = 0.12;
 const TICK_MS = 28;
 
@@ -155,7 +204,7 @@ export class Arpeggiator {
 
     while (this.nextAt < horizon && guard++ < 16) {
       const noteIndex = this.nextNote();
-      const stepSeconds = (60 / this.getTempo()) * ARP_RATE_BEATS[this.rate];
+      const stepSeconds = arpStepSeconds(this.getTempo(), this.rate);
       const duration = Math.max(0.06, stepSeconds * 0.72);
 
       this.engine.playScheduled(noteIndex, this.nextAt, duration);
@@ -165,35 +214,13 @@ export class Arpeggiator {
   };
 
   private nextNote(): number {
-    const pool = this.pool;
-    const size = pool.length;
-    let index = 0;
-
-    switch (this.pattern) {
-      case "down":
-        index = size - 1 - (this.step % size);
-        break;
-      case "updown": {
-        const cycle = Math.max(1, 2 * size - 2);
-        const position = this.step % cycle;
-        index = position < size ? position : cycle - position;
-        break;
-      }
-      case "random": {
-        index = Math.floor(Math.random() * size);
-        if (size > 1 && pool[index] === this.lastRandomNote) {
-          index = (index + 1 + Math.floor(Math.random() * (size - 1))) % size;
-        }
-        break;
-      }
-      default:
-        index = this.step % size;
-        break;
-    }
-
+    const note = pickArpNote(
+      this.pool,
+      this.pattern,
+      this.step,
+      this.lastRandomNote,
+    );
     this.step++;
-
-    const note = pool[index];
     this.lastRandomNote = note;
     return note;
   }

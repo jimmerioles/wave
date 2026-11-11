@@ -13,11 +13,82 @@ export type MidiStatus =
   | "unsupported"
   | "denied";
 
+export type ParsedMidiMessage =
+  | { type: "noteon"; note: number; velocity: number }
+  | { type: "noteoff"; note: number };
+
 export interface MidiCallbacks {
   onNoteOn: (midi: number, velocity: number) => void;
   onNoteOff: (midi: number) => void;
   onStatus: (status: MidiStatus, devices: number) => void;
   onDisconnect: () => void;
+}
+
+/** MIDI note number to the matching one-octave pad, where one exists. */
+const MIDI_PAD: Record<number, number> = {
+  48: 0,
+  50: 1,
+  52: 2,
+  53: 3,
+  55: 4,
+  57: 5,
+  59: 6,
+  60: 7,
+};
+
+const MIDI_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
+];
+
+function clampMidi(midi: number): number {
+  return Math.max(0, Math.min(127, Math.round(midi)));
+}
+
+export function padForMidiNote(midi: number): number | null {
+  return MIDI_PAD[clampMidi(midi)] ?? null;
+}
+
+export function midiNoteName(midi: number): string {
+  const safe = clampMidi(midi);
+  return `${MIDI_NAMES[safe % 12]}${Math.floor(safe / 12) - 1}`;
+}
+
+/**
+ * Parse the subset of MIDI we act on. Note-on with velocity 0 is a note-off,
+ * as required by the MIDI spec.
+ */
+export function parseMidiMessage(
+  data: Uint8Array | null | undefined,
+): ParsedMidiMessage | null {
+  if (!data || data.length < 2) return null;
+
+  const command = data[0] & 0xf0;
+  const note = data[1] & 0x7f;
+
+  if (command === 0x90) {
+    if (data.length < 3) return null;
+    const velocity = data[2] & 0x7f;
+    return velocity === 0
+      ? { type: "noteoff", note }
+      : { type: "noteon", note, velocity };
+  }
+
+  if (command === 0x80) {
+    return { type: "noteoff", note };
+  }
+
+  return null;
 }
 
 export class MidiInput {
@@ -86,18 +157,13 @@ export class MidiInput {
   }
 
   private handleMessage = (event: MIDIMessageEvent): void => {
-    const data = event.data;
-    if (!data || data.length < 2) return;
+    const message = parseMidiMessage(event.data);
+    if (!message) return;
 
-    const command = data[0] & 0xf0;
-    const midi = data[1];
-
-    if (command === 0x90 && data.length >= 3) {
-      const velocity = data[2];
-      if (velocity === 0) this.callbacks.onNoteOff(midi);
-      else this.callbacks.onNoteOn(midi, velocity);
-    } else if (command === 0x80) {
-      this.callbacks.onNoteOff(midi);
+    if (message.type === "noteon") {
+      this.callbacks.onNoteOn(message.note, message.velocity);
+    } else {
+      this.callbacks.onNoteOff(message.note);
     }
   };
 

@@ -26,6 +26,7 @@ npm run dev
 Open the URL Vite prints (usually `http://localhost:5173`).
 
 ```bash
+npm test          # Vitest unit suite
 npm run build     # type-check + production build
 npm run preview   # serve the production build at /wave/
 ```
@@ -181,12 +182,25 @@ src/midi.ts       Web MIDI access, device tracking and message parsing
 src/settings.ts   validated localStorage persistence
 src/orb.ts        Canvas 2D visualizer and particle system
 src/main.ts       input, presets, recording, demo, lifecycle
+src/*.test.ts     Vitest unit tests for the pure logic
 CONCEPT.md        original brief
 ```
 
-There are no runtime dependencies beyond Vite and TypeScript. Fonts come from
-Google Fonts; everything visual is CSS, SVG or Canvas, and every sound is
-synthesized at runtime.
+There are no runtime dependencies. Vite, TypeScript and Vitest are dev-only;
+fonts come from Google Fonts, everything visual is CSS, SVG or Canvas, and
+every sound is synthesized at runtime.
+
+## Tests
+
+```bash
+npm test          # one run
+npm run test:watch
+```
+
+The unit suite covers settings validation and persistence, MIDI message parsing
+and note-to-pad mapping, arp pattern/rate math, and the cutoff/frequency
+helpers. The visualizer, audio timbre, MediaRecorder output and physical MIDI
+devices remain manual/browser checks; they are not pixel- or device-tested.
 
 ## Roadmap
 

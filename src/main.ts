@@ -21,7 +21,7 @@ import {
   type StoredSettings,
   type VisualMode,
 } from "./settings";
-import { MidiInput, type MidiStatus } from "./midi";
+import { MidiInput, midiNoteName, padForMidiNote, type MidiStatus } from "./midi";
 import { OrbScene } from "./orb";
 import {
   SONG_BASS,
@@ -108,36 +108,6 @@ const NOTE_ACCENTS = [
 ];
 
 /** MIDI note number to the matching one-octave pad, where one exists. */
-const MIDI_PAD: Record<number, number> = {
-  48: 0,
-  50: 1,
-  52: 2,
-  53: 3,
-  55: 4,
-  57: 5,
-  59: 6,
-  60: 7,
-};
-
-const MIDI_NAMES = [
-  "C",
-  "C#",
-  "D",
-  "D#",
-  "E",
-  "F",
-  "F#",
-  "G",
-  "G#",
-  "A",
-  "A#",
-  "B",
-];
-
-function midiNoteName(midi: number): string {
-  return `${MIDI_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
-}
-
 function midiVisualIndex(midi: number): number {
   return Math.max(0, Math.min(9, (midi - 48) * 0.5 + 3.5));
 }
@@ -1259,7 +1229,7 @@ function restoreReadoutAfterMidi(): void {
 function midiNoteOn(note: number, velocity: number): void {
   if (midiActive.has(note)) return;
 
-  const padIndex = MIDI_PAD[note] ?? null;
+  const padIndex = padForMidiNote(note);
   const source = `midi:${note}`;
   const normalized = Math.max(0.12, Math.min(1, velocity / 127));
 
