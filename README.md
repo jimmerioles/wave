@@ -194,6 +194,7 @@ src/settings.ts   validated localStorage persistence
 src/orb.ts        Canvas 2D visualizer and particle system
 src/main.ts       input, presets, recording, demo, lifecycle
 src/*.test.ts     Vitest unit tests for the pure logic
+public/og-wave.jpg  1200x630 social preview image
 CONCEPT.md        original brief
 ```
 
