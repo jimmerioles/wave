@@ -26,8 +26,8 @@ import { MidiInput, midiNoteName, padForMidiNote, type MidiStatus } from "./midi
 import { OrbScene } from "./orb";
 import {
   SONG_BASS,
-  SONG_BEATS,
   SONG_DRUMS,
+  SONG_FIRST_CHORUS_END,
   SONG_HORN,
   SONG_LEAD,
   SONG_LEAD_START,
@@ -1492,7 +1492,7 @@ updateMidiUi(midi.supported ? "idle" : "unsupported", 0);
 
 const EGG_BPM = 113;
 const EGG_BEAT_MS = 60000 / EGG_BPM;
-const EGG_BEATS = SONG_BEATS;
+const EGG_BEATS = SONG_FIRST_CHORUS_END;
 const EGG_LENGTH = EGG_BEATS * EGG_BEAT_MS;
 /** Milliseconds between the trigger and the first sample. */
 const EGG_START_DELAY = 60;
@@ -1602,6 +1602,7 @@ function startEgg(): void {
   const introBoost = (at: number) => (at < 35 ? 1.35 : 1);
 
   for (const [at, midi, length, velocity] of SONG_LEAD) {
+    if (at >= EGG_BEATS) continue;
     eggEvents.push({
       at,
       play: () =>
@@ -1615,6 +1616,7 @@ function startEgg(): void {
   }
 
   for (const [at, midi, length, velocity] of SONG_BASS) {
+    if (at >= EGG_BEATS) continue;
     eggEvents.push({
       at,
       play: () =>
@@ -1628,6 +1630,7 @@ function startEgg(): void {
   }
 
   for (const [at, midis, length, velocity] of SONG_PIANO) {
+    if (at >= EGG_BEATS) continue;
     eggEvents.push({
       at,
       play: () =>
@@ -1641,6 +1644,7 @@ function startEgg(): void {
   }
 
   for (const [at, midi, length, velocity] of SONG_STRINGS) {
+    if (at >= EGG_BEATS) continue;
     const boost = introBoost(at);
     eggEvents.push({
       at,
@@ -1668,6 +1672,7 @@ function startEgg(): void {
   }
 
   for (const [at, midi, length, velocity] of SONG_HORN) {
+    if (at >= EGG_BEATS) continue;
     const boost = introBoost(at);
     eggEvents.push({
       at,
@@ -1682,6 +1687,7 @@ function startEgg(): void {
   }
 
   for (const [at, kind, frequency, velocity] of SONG_DRUMS) {
+    if (at >= EGG_BEATS) continue;
     const boost = introBoost(at);
     eggEvents.push({
       at,
@@ -1712,8 +1718,8 @@ function startEgg(): void {
     });
   }
 
-  // Schedule only a two-second lookahead so a 1:22 arrangement does not create
-  // every oscillator at once. This keeps mobile audio graphs healthy.
+  // Schedule only a two-second lookahead so a one-minute arrangement does not
+  // create every oscillator at once. This keeps mobile audio graphs healthy.
   eggEvents.sort((a, b) => a.at - b.at);
   let nextEggEvent = 0;
   const scheduleEggWindow = (): void => {
@@ -1743,6 +1749,7 @@ function startEgg(): void {
         if (!eggPlaying || run !== eggRun) return;
         if (!isNoteHeldByUser(noteIndex)) {
           setPadState(noteIndex, true);
+          orb.burst(noteIndex);
         }
         eggTimers.push(
           window.setTimeout(() => {
@@ -1763,6 +1770,7 @@ function startEgg(): void {
     scheduleEggPad(at, midi - 12, length);
   }
   for (const [at, midi, length] of SONG_LEAD) {
+    if (at >= EGG_BEATS) break;
     scheduleEggPad(at, midi, length);
   }
 

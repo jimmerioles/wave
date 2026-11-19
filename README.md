@@ -72,7 +72,7 @@ The master output is intentionally low (0.2) and compressed.
 ## Easter egg
 
 Triple-tap the wave mark, or enter the Konami code
-(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A ~1:22, 113 BPM synth-pop edit in
+(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A ~1:01, 113 BPM synth-pop edit in
 the original A-flat key plays: the tom-fill intro, verse 1, pre-chorus and the
 first chorus, with a bright lead, synth bass, piano, strings, horn and drum
 machine. The demo button becomes a stop/progress control while it plays; `Esc`
@@ -153,7 +153,7 @@ the gag is visual-only. The About dialog has a small hint.
   reports it and the rest of the instrument keeps working.
 
 **Easter egg**
-- A hidden ~1:22 synth-pop edit of “Never Gonna Give You Up” at 113 BPM:
+- A hidden ~1:01 synth-pop edit of “Never Gonna Give You Up” at 113 BPM:
   the tom-fill intro, verse 1, pre-chorus and the first chorus, with a bright
   detuned lead, synth bass, piano, strings, horn and drum machine, all
   synthesized at runtime from reference note data.

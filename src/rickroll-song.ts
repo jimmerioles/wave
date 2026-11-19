@@ -1,9 +1,10 @@
 /**
  * The opening section of "Never Gonna Give You Up", extracted from a reference
- * MIDI in the original A-flat major key. It covers the tom-fill intro, verse 1,
- * pre-chorus and the first chorus. Times are in beats from the first tom hit.
- * The data was generated from the reference arrangement; edit it deliberately
- * if the chart changes.
+ * MIDI in the original A-flat major key. The data carries the tom-fill intro,
+ * verse 1, pre-chorus, first chorus, and the next verse/pre-chorus for
+ * reference. The egg itself stops at the end of the first chorus. Times are in
+ * beats from the first tom hit. The data was generated from the reference
+ * arrangement; edit it deliberately if the chart changes.
  */
 
 export type SongDrumKind =
@@ -21,9 +22,13 @@ export type SongDrum = readonly [
   velocity: number,
 ];
 
+/** Length of the reference data, including the verse after the first chorus. */
 export const SONG_BEATS = 155.5;
 export const SONG_LEAD_START = 35;
-export const SONG_CHORUS_START = 115.5;
+/** The first chorus starts on the downbeat after the second tom fill. */
+export const SONG_CHORUS_START = 82.5;
+/** The eighth bar of the first chorus lands here, before the next verse. */
+export const SONG_FIRST_CHORUS_END = 114.5;
 
 export const SONG_LEAD: readonly (readonly [number, number, number, number])[] = [
   [35, 61, 0.25, 0.96],
