@@ -30,6 +30,7 @@ import {
   SONG_DRUMS,
   SONG_HORN,
   SONG_LEAD,
+  SONG_LEAD_START,
   SONG_PIANO,
   SONG_STRINGS,
 } from "./rickroll-song";
@@ -1529,6 +1530,26 @@ function isNoteHeldByUser(noteIndex: number): boolean {
   return false;
 }
 
+/**
+ * Map an A-flat-major note to the C-major pad that mirrors it. The song spans
+ * more octaves than the keybed, so pitch class picks the scale degree and the
+ * top A-flat folds onto the top C. Chromatic passing notes have no pad.
+ */
+const EGG_PAD_BY_PITCH_CLASS: Record<number, number> = {
+  10: 1, // B-flat
+  0: 2, // C
+  1: 3, // D-flat
+  3: 4, // E-flat
+  5: 5, // F
+  7: 6, // G
+};
+
+function eggPadForMidi(midi: number): number | null {
+  const pitchClass = ((midi % 12) + 12) % 12;
+  if (pitchClass === 8) return midi >= 68 ? 7 : 0;
+  return EGG_PAD_BY_PITCH_CLASS[pitchClass] ?? null;
+}
+
 function startEgg(): void {
   if (eggPlaying) return;
   engine.ensure();
@@ -1711,11 +1732,10 @@ function startEgg(): void {
   };
   scheduleEggWindow();
 
-  const keybedOffsets = [0, 2, 4, 5, 7, 9, 11, 12];
-  for (const [at, midi, length] of SONG_LEAD) {
-    // The lead is in A-flat; shift it to the C keybed for the visual only.
-    const noteIndex = keybedOffsets.indexOf(midi - 8 - 48);
-    if (noteIndex < 0 || noteIndex >= KEYBED_SIZE) continue;
+  const scheduleEggPad = (at: number, midi: number, length: number): void => {
+    const noteIndex = eggPadForMidi(midi);
+    if (noteIndex === null || noteIndex >= KEYBED_SIZE) return;
+
     const atMs = EGG_START_DELAY + at * EGG_BEAT_MS;
     const lengthMs = Math.max(110, length * EGG_BEAT_MS);
     eggTimers.push(
@@ -1734,6 +1754,16 @@ function startEgg(): void {
         );
       }, atMs),
     );
+  };
+
+  // Before the vocal, the strings carry the lead. Mirror the same line the
+  // audio plays (down an octave), then hand the keybed to the vocal lead.
+  for (const [at, midi, length] of SONG_STRINGS) {
+    if (at >= SONG_LEAD_START) break;
+    scheduleEggPad(at, midi - 12, length);
+  }
+  for (const [at, midi, length] of SONG_LEAD) {
+    scheduleEggPad(at, midi, length);
   }
 
   eggTimers.push(
