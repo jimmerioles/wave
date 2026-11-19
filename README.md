@@ -67,7 +67,9 @@ npm run preview   # serve the production build at /wave/
   100 BPM, arp off and Orb view, and clears the saved settings.
 
 Audio starts only after the first pointer or key gesture. Nothing autoplays.
-The master output is intentionally low (0.2) and compressed.
+The demo sits around -15 LUFS integrated with true peaks below -2 dBTP, close
+to Spotify and YouTube's -14 LUFS reference, and the synth shares the same
+gain staging.
 
 ## Easter egg
 

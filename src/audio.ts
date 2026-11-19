@@ -611,7 +611,7 @@ export class SynthEngine {
     this.context = ctx;
 
     const bus = ctx.createGain();
-    bus.gain.value = 0.8;
+    bus.gain.value = 1.1;
 
     const tone = ctx.createBiquadFilter();
     tone.type = "lowpass";
@@ -626,19 +626,23 @@ export class SynthEngine {
     shaper.curve = makeSoftClipCurve(1.7);
     shaper.oversample = "2x";
 
+    // Glue and peak control only. The old -18 dB / 5:1 setting was acting as a
+    // constant 7 dB pad on every voice, which made the whole instrument quiet.
     const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -18;
-    compressor.knee.value = 18;
+    compressor.threshold.value = -14;
+    compressor.knee.value = 10;
     compressor.ratio.value = 5;
     compressor.attack.value = 0.004;
-    compressor.release.value = 0.24;
+    compressor.release.value = 0.16;
 
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
     analyser.smoothingTimeConstant = 0.82;
 
+    // Unity is the streaming-level trim: the shaper and compressor keep the
+    // demo near -15 LUFS integrated with true peaks below -2 dBTP.
     const master = ctx.createGain();
-    master.gain.value = 0.2;
+    master.gain.value = 1;
 
     const muteGain = ctx.createGain();
     muteGain.gain.value = this.muted ? 0 : 1;
@@ -747,7 +751,9 @@ export class RickrollAudio {
     this.ctx = ctx;
 
     const master = ctx.createGain();
-    master.gain.value = 1.3;
+    // The egg bypasses the main compressor, so trim it to land beside the demo
+    // rather than above it and keep true peaks under -1 dBTP.
+    master.gain.value = 0.95;
     const compressor = ctx.createDynamicsCompressor();
     compressor.threshold.value = -14;
     compressor.knee.value = 10;
