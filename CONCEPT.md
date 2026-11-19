@@ -1,4 +1,4 @@
-# Wave — the playable synth
+# Wave: the playable synth
 
 A landing page for a browser synth where the hero is the instrument.
 

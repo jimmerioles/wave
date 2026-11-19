@@ -895,7 +895,7 @@ const DEMO_BEATS = 48;
 /** A short release keeps the arp and hook legible against the pad presets. */
 const DEMO_RELEASE = 0.38;
 
-/** [beat, cutoff slider value] — the demo rides the shared filter. */
+/** [beat, cutoff slider value]: the demo rides the shared filter. */
 const DEMO_FILTER: readonly (readonly [number, number])[] = [
   [0, 22],
   [8, 36],
@@ -1195,7 +1195,7 @@ function finishRecording(session: RecordingSession): void {
     type: session.mimeType || "audio/webm",
   });
   if (blob.size === 0) {
-    setEggToast("nothing recorded — try again", true, 3200);
+    setEggToast("nothing recorded, try again", true, 3200);
     return;
   }
 
@@ -1571,7 +1571,7 @@ function startEgg(): void {
   stagePreset.dataset.preset = "glass";
   document.body.dataset.preset = "glass";
   setEggToast(
-    muted ? "sound is off — tap the speaker" : "you just got wave-rolled",
+    muted ? "sound is off: tap the speaker" : "you just got wave-rolled",
     true,
     muted ? 6000 : 3200,
   );

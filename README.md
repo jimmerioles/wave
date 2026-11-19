@@ -1,4 +1,4 @@
-# Wave — the playable synth
+# Wave: the playable synth
 
 **Live demo:** https://jimmerioles.github.io/wave/
 
@@ -6,11 +6,11 @@ A landing page for a browser synthesizer where the hero is the instrument.
 Hold a key or tap a pad, and the orb, rings, particles and meters answer the
 sound you make. No video, no waveform loop, no samples.
 
-The demo button plays *First Light*, an original 12-bar cue composed for Wave —
+The demo button plays *First Light*, an original 12-bar cue composed for Wave:
 a quiet chord, an arpeggio, a hook, one hanging high note and a final chord, all
 scheduled through the same eight-voice instrument you play by hand.
 
-![Wave — the playable synth](docs/wave-idle.webp)
+![Wave: the playable synth](docs/wave-idle.webp)
 
 Wave is one of five prototype studies in high-craft interactive landing pages:
 static-first, one signature interaction, a physical metaphor, sound only on
@@ -43,7 +43,7 @@ npm run preview   # serve the production build at /wave/
   both the arp and the demo, and the demo's duration label updates before the
   next play.
 - **Bloom / Glass / Tape / Haze / Pulse** change the oscillator mix, filter,
-  envelope, delay and reverb character — and tint the orb to match. Each preset
+  envelope, delay and reverb character, and tint the orb to match. Each preset
   also has its own motion signature.
 - **Orb / Scope** switches the stage between the orb and a live oscilloscope.
   The choice is saved with the rest of the settings.
@@ -239,7 +239,7 @@ The “Rough edges” below are the honest next candidates.
   measurement.
 - The synth has been built and interaction-tested headlessly; the audio graph
   has not been tuned on every output device.
-- The About dialog is the whole "product" story — there is no downstream app,
+- The About dialog is the whole "product" story. There is no downstream app,
   pricing or docs page behind the prototype.
 
 ## Credits
