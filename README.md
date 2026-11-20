@@ -73,7 +73,7 @@ gain staging.
 
 ## Watch the explainer
 
-https://github.com/user-attachments/assets/9010c0a4-2bef-4a88-8cf1-d6ea02c4b25e
+https://github.com/user-attachments/assets/ff340c1b-e8b3-4337-98dd-3f45c68eaf0a
 
 A 3:15 animated walkthrough of how Wave works, narrated and scored with the
 prototype's own *First Light* cue. If the player starts muted, use the volume
