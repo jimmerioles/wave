@@ -16,17 +16,6 @@ Wave is one of five prototype studies in high-craft interactive landing pages:
 static-first, one signature interaction, a physical metaphor, sound only on
 gesture, and a reduced-motion fallback.
 
-## Watch the explainer
-
-https://github.com/user-attachments/assets/29a9e5d1-7be0-49fd-8ca1-5a2dbcd4d35f
-
-A 3:15 animated walkthrough of how Wave works, narrated and scored with the
-prototype's own *First Light* cue. If the player starts muted, use the volume
-control to hear the narration.
-
-The [companion script](docs/explainer/script.md) has the full narration, chapter
-timestamps and shot notes.
-
 ## Run it
 
 ```bash
@@ -81,6 +70,17 @@ Audio starts only after the first pointer or key gesture. Nothing autoplays.
 The demo sits around -15 LUFS integrated with true peaks below -2 dBTP, close
 to Spotify and YouTube's -14 LUFS reference, and the synth shares the same
 gain staging.
+
+## Watch the explainer
+
+https://github.com/user-attachments/assets/9010c0a4-2bef-4a88-8cf1-d6ea02c4b25e
+
+A 3:15 animated walkthrough of how Wave works, narrated and scored with the
+prototype's own *First Light* cue. If the player starts muted, use the volume
+control to hear the narration.
+
+The [companion script](docs/explainer/script.md) has the full narration, chapter
+timestamps and shot notes.
 
 ## Easter egg
 
