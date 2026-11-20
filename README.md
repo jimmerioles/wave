@@ -4,7 +4,7 @@
 
 A landing page for a browser synthesizer where the hero is the instrument.
 Hold a key or tap a pad, and the orb, rings, particles and meters answer the
-sound you make. No video, no waveform loop, no samples.
+sound you make. The page itself uses no video, no waveform loop, no samples.
 
 The demo button plays *First Light*, an original 12-bar cue composed for Wave:
 a quiet chord, an arpeggio, a hook, one hanging high note and a final chord, all
