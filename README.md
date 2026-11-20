@@ -16,6 +16,17 @@ Wave is one of five prototype studies in high-craft interactive landing pages:
 static-first, one signature interaction, a physical metaphor, sound only on
 gesture, and a reduced-motion fallback.
 
+## Watch the explainer
+
+[![Wave explainer poster](docs/explainer/wave-explainer-poster.jpg)](https://github.com/jimmerioles/wave/releases/download/explainer-v1/wave-explainer.mp4)
+
+A 3:21 animated walkthrough of how Wave works, narrated and scored with the
+prototype's own *First Light* cue:
+[the release asset](https://github.com/jimmerioles/wave/releases/download/explainer-v1/wave-explainer.mp4).
+
+The [companion script](docs/explainer/script.md) has the full narration, chapter
+timestamps and shot notes.
+
 ## Run it
 
 ```bash
@@ -197,6 +208,7 @@ src/orb.ts        Canvas 2D visualizer and particle system
 src/main.ts       input, presets, recording, demo, lifecycle
 src/*.test.ts     Vitest unit tests for the pure logic
 public/og-wave.jpg  1200x630 social preview image
+docs/explainer/   explainer film, poster and shot notes
 ARCHITECTURE.md    how the pieces fit together
 CONCEPT.md        original brief
 ```
