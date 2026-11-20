@@ -18,11 +18,11 @@ gesture, and a reduced-motion fallback.
 
 ## Watch the explainer
 
-[![Wave explainer poster](docs/explainer/wave-explainer-poster.jpg)](https://github.com/jimmerioles/wave/releases/download/explainer-v1/wave-explainer.mp4)
+https://github.com/user-attachments/assets/29a9e5d1-7be0-49fd-8ca1-5a2dbcd4d35f
 
-A 3:21 animated walkthrough of how Wave works, narrated and scored with the
-prototype's own *First Light* cue:
-[the release asset](https://github.com/jimmerioles/wave/releases/download/explainer-v1/wave-explainer.mp4).
+A 3:15 animated walkthrough of how Wave works, narrated and scored with the
+prototype's own *First Light* cue. The full-quality cut is on the
+[explainer release page](https://github.com/jimmerioles/wave/releases/tag/explainer-v2).
 
 The [companion script](docs/explainer/script.md) has the full narration, chapter
 timestamps and shot notes.

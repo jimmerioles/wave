@@ -1,8 +1,8 @@
 # Wave explainer
 
-A 3:21 animated explainer for the Wave prototype.
+A 3:15 animated explainer for the Wave prototype.
 
-- [wave-explainer.mp4](https://github.com/jimmerioles/wave/releases/download/explainer-v1/wave-explainer.mp4): 1920 × 1080, 30 fps, H.264 + AAC, 39 MB, published as a GitHub Release asset.
+- **Watch:** the inline player in the [repository README](../../README.md#watch-the-explainer). The full 1080p file is on the [explainer release page](https://github.com/jimmerioles/wave/releases/tag/explainer-v2).
 - `wave-explainer-poster.jpg`: opening frame, 1920 × 1080.
 - `script.md`: chapter timestamps, full narration, shot notes, credits.
 
