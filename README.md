@@ -21,8 +21,8 @@ gesture, and a reduced-motion fallback.
 https://github.com/user-attachments/assets/29a9e5d1-7be0-49fd-8ca1-5a2dbcd4d35f
 
 A 3:15 animated walkthrough of how Wave works, narrated and scored with the
-prototype's own *First Light* cue. The full-quality cut is on the
-[explainer release page](https://github.com/jimmerioles/wave/releases/tag/explainer-v2).
+prototype's own *First Light* cue. If the player starts muted, use the volume
+control to hear the narration.
 
 The [companion script](docs/explainer/script.md) has the full narration, chapter
 timestamps and shot notes.
