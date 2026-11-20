@@ -3,7 +3,7 @@
 A 3:15 animated explainer for the Wave prototype. 1920 × 1080, 30 fps,
 stereo.
 
-- **Watch:** the inline player in the [repository README](../../README.md#watch-the-explainer)
+- **Watch:** the inline player in the [repository README](../../README.md)
 - **Poster:** [wave-explainer-poster.jpg](wave-explainer-poster.jpg)
 - **Companion docs:** [ARCHITECTURE.md](../../ARCHITECTURE.md),
   [CONCEPT.md](../../CONCEPT.md)
