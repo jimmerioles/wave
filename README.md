@@ -12,8 +12,7 @@ scheduled through the same eight-voice instrument you play by hand.
 
 https://github.com/user-attachments/assets/74e3ff18-87f2-49a4-b6a1-e99b7f78069e
 
-A 3:20 animated walkthrough of how Wave works, narrated with the Kokoro
-`af_heart` voice and scored with the house *midnight tech* cue. If the player
+A 3:20 animated walkthrough of how Wave works. If the player
 starts muted, use the volume control to hear the narration.
 
 The [companion script](docs/explainer/script.md) has the full narration, chapter
