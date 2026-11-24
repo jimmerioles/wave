@@ -10,11 +10,11 @@ The demo button plays *First Light*, an original 12-bar cue composed for Wave:
 a quiet chord, an arpeggio, a hook, one hanging high note and a final chord, all
 scheduled through the same eight-voice instrument you play by hand.
 
-https://github.com/user-attachments/assets/ff340c1b-e8b3-4337-98dd-3f45c68eaf0a
+https://github.com/user-attachments/assets/74e3ff18-87f2-49a4-b6a1-e99b7f78069e
 
-A 3:15 animated walkthrough of how Wave works, narrated and scored with the
-prototype's own *First Light* cue. If the player starts muted, use the volume
-control to hear the narration.
+A 3:20 animated walkthrough of how Wave works, narrated with the Kokoro
+`af_heart` voice and scored with the house *midnight tech* cue. If the player
+starts muted, use the volume control to hear the narration.
 
 The [companion script](docs/explainer/script.md) has the full narration, chapter
 timestamps and shot notes.
