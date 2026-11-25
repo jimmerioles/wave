@@ -2,7 +2,7 @@
 
 **Eight keys, five moods, one warm little instrument.**
 
-**Live demo:** https://jimmerioles.github.io/wave/
+**Live demo:** https://jimmerioles.github.io/wave/ [![Deploy to GitHub Pages](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml)
 
 **Case study:** https://jimmerioles.github.io/wave/case-study.html
 
