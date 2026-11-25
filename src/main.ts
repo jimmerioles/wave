@@ -331,7 +331,7 @@ function resetReadoutSoon(): void {
   if (readoutTimer !== null) clearTimeout(readoutTimer);
   readoutTimer = window.setTimeout(() => {
     if (activeSources.size > 0 || arp.isPlaying || midiReadoutActive) return;
-    noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+    noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "–";
     noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
     noteReadout.classList.remove("is-live");
   }, 240);
@@ -457,7 +457,7 @@ function showArpStep(noteIndex: number, durationMs: number): void {
 
   lastNote = noteIndex;
   if (!midiReadoutActive) {
-    noteReadout.textContent = NOTES[noteIndex]?.name ?? "—";
+    noteReadout.textContent = NOTES[noteIndex]?.name ?? "–";
     noteSub.textContent = `arp · ${ARP_PATTERN_LABELS[arp.pattern]}`;
     noteReadout.classList.add("is-live");
   }
@@ -491,7 +491,7 @@ function clearArpStep(): void {
     return;
   }
 
-  noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+  noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "–";
   noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
   noteReadout.classList.remove("is-live");
   syncPlayingState();
@@ -795,7 +795,7 @@ const DEMO_NOTES: readonly DemoEvent[] = [
   [2, N.E4, 1.6, 0.32, 1.2],
   [4, N.G3, 3.4, 0.36, 0.8],
 
-  // Pulse: Am7 – F – C – G, bass roots and an eighth-note arp. The last two
+  // Pulse: Am7, F, C, G, bass roots and an eighth-note arp. The last two
   // beats of the G bar double to sixteenths, pulling into the lift.
   [8, N.A3, 3.4, 0.5, 0.3],
   [8, N.E3, 0.42, 0.34, 0.18],
@@ -841,7 +841,7 @@ const DEMO_NOTES: readonly DemoEvent[] = [
   [23.5, N.B3, 0.36, 0.34, 0.15],
   [23.75, N.D3, 0.36, 0.32, 0.15],
 
-  // Lift: F – G – Am – F. The bass takes the inversion that leaves the melody
+  // Lift: F, G, Am, F. The bass takes the inversion that leaves the melody
   // free: F/C, G/D, Am/E, F/C. Chords are short stabs so the hook can breathe.
   [24, N.F3, 2.2, 0.48, 0.5],
   [24, N.C3, 1.8, 0.34, 0.4],
@@ -1368,7 +1368,7 @@ function restoreReadoutAfterMidi(): void {
     }
   }
 
-  noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+  noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "–";
   noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
   noteReadout.classList.remove("is-live");
 }
@@ -1807,7 +1807,7 @@ function stopEgg(): void {
     const remaining = [...activeSources.values()][activeSources.size - 1];
     if (remaining !== undefined) setReadout(remaining);
   } else {
-    noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "—";
+    noteReadout.textContent = lastNote >= 0 ? NOTES[lastNote].name : "–";
     noteSub.textContent = lastNote >= 0 ? "released" : "hold a key";
     noteReadout.classList.remove("is-live");
   }
@@ -1877,7 +1877,7 @@ function resetInstrument(): void {
     readoutTimer = null;
   }
   lastNote = -1;
-  noteReadout.textContent = "—";
+  noteReadout.textContent = "–";
   noteSub.textContent = "hold a key";
   noteReadout.classList.remove("is-live");
 
@@ -2077,7 +2077,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // Keep the initial UI honest before any sound has been made.
-noteReadout.textContent = "—";
+noteReadout.textContent = "–";
 noteSub.textContent = "hold a key";
 applyPreset(currentPreset, true);
 
