@@ -4,7 +4,7 @@
 
 **Live demo:** https://jimmerioles.github.io/wave/
 
-https://github.com/user-attachments/assets/30cb5368-39fc-4058-bead-1c2d86bd475a
+https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
 
 Wave is a browser synthesizer where the page is the instrument. Hold a key or
 tap a pad, and the orb, rings and meters answer the sound you are making,
