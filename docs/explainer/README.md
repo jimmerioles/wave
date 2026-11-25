@@ -3,7 +3,7 @@
 A 3:20 animated explainer for the Wave prototype.
 
 - **Watch:** the inline player in the [repository README](../../README.md). The full 1080p file is on the [explainer release page](https://github.com/jimmerioles/wave/releases/tag/explainer).
-- `wave-explainer-poster.jpg`: 1920 × 1080 poster.
+- `wave-explainer-poster.jpg`: 1920 × 1080 poster, used as the film's first frame.
 - `script.md`: chapter timestamps, full narration, shot notes, credits.
 
 The film is a standalone production. It is not loaded by the app and adds no

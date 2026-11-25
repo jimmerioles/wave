@@ -4,7 +4,7 @@ A 3:20 animated explainer for the Wave prototype. 1920 × 1080, 30 fps,
 stereo.
 
 - **Watch:** the inline player in the [repository README](../../README.md)
-- **Poster:** [wave-explainer-poster.jpg](wave-explainer-poster.jpg)
+- **Poster:** [wave-explainer-poster.jpg](wave-explainer-poster.jpg), also the film's first frame
 - **Companion docs:** [ARCHITECTURE.md](../../ARCHITECTURE.md),
   [CONCEPT.md](../../CONCEPT.md)
 
@@ -18,7 +18,7 @@ a single idea carried from start to finish.
 
 | Time | Chapter | On screen |
 | --- | --- | --- |
-| 0:01 | Cold open | The wordmark, three claims, then the live page. The stage lifts out of the page as a match cut. |
+| 0:01 | Cold open | The live page poster dissolves into the wordmark and three claims. The stage lifts out of the page as a match cut. |
 | 0:23 | The signal | Two crossed-out cards (a video loop, a fake spectrum) give way to the real stage and a live analyser trace. |
 | 0:42 | One voice | The A key, three oscillators converging on one voice, the ADSR envelope, and eight voice meters. |
 | 1:08 | The shared chain | Voice to bus to filter to soft clip, compressor, analyser, mute and out. Delay and reverb sit in a send rack. |

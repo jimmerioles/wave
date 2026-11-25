@@ -10,7 +10,7 @@ The demo button plays *First Light*, an original 12-bar cue composed for Wave:
 a quiet chord, an arpeggio, a hook, one hanging high note and a final chord, all
 scheduled through the same eight-voice instrument you play by hand.
 
-https://github.com/user-attachments/assets/74e3ff18-87f2-49a4-b6a1-e99b7f78069e
+https://github.com/user-attachments/assets/30cb5368-39fc-4058-bead-1c2d86bd475a
 
 A 3:20 animated walkthrough of how Wave works. If the player
 starts muted, use the volume control to hear the narration.
