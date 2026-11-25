@@ -1,8 +1,13 @@
+<p align="right">
+  <a href="https://github.com/jimmerioles/wave/actions/workflows/test.yml"><img src="https://github.com/jimmerioles/wave/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml"><img src="https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml/badge.svg" alt="Deploy to GitHub Pages"></a>
+</p>
+
 # Wave: the playable synth
 
 **Eight keys, five moods, one warm little instrument.**
 
-**Live demo:** https://jimmerioles.github.io/wave/ [![Deploy to GitHub Pages](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml)
+**Live demo:** https://jimmerioles.github.io/wave/
 
 **Case study:** https://jimmerioles.github.io/wave/case-study.html
 
