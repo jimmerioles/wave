@@ -19,6 +19,9 @@ Think of the app as a small band with a conductor and a painter.
 | `src/audio.ts` | The instrument: audio graph, voices, presets, synth band |
 | `src/orb.ts` | The painter: orb, oscilloscope, particles, springs |
 | `src/arp.ts` | The arpeggiator clock and pattern logic |
+| `src/demo.ts` | First Light's timing and filter ride |
+| `src/egg.ts` | Easter egg pad mapping and the Konami matcher |
+| `src/format.ts` | Recording readout formatting and MIME choice |
 | `src/midi.ts` | Web MIDI access and message parsing |
 | `src/settings.ts` | Safe `localStorage` save and load |
 | `src/rickroll-song.ts` | Note data for the easter egg |
@@ -112,10 +115,12 @@ progress and shot list focus) are in `src/case-study.ts`.
 - **Sound:** `PRESETS` and `createVoice()` in `src/audio.ts`
 - **Look:** `src/style.css` for layout, `src/orb.ts` for canvas drawing
 - **Demo song:** `DEMO_NOTES` in `src/main.ts`
+- **Demo timing and filter:** `src/demo.ts`
 - **Controls:** `index.html` for markup, then the matching handler in
   `src/main.ts`
 - **Timing:** `src/arp.ts`
 - **Storage rules:** `src/settings.ts`
+- **Easter egg mapping and Konami code:** `src/egg.ts`
 
 ## Suggested reading order
 
@@ -124,4 +129,5 @@ progress and shot list focus) are in `src/case-study.ts`.
 3. `src/main.ts` for how everything is wired together.
 4. `src/audio.ts` for how a note becomes sound.
 5. `src/orb.ts` for how sound becomes pixels.
-6. The small modules (`arp.ts`, `midi.ts`, `settings.ts`) as needed.
+6. The small modules (`arp.ts`, `demo.ts`, `egg.ts`, `format.ts`, `midi.ts`,
+   `settings.ts`) as needed.

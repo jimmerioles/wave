@@ -59,6 +59,11 @@ export function padForMidiNote(midi: number): number | null {
   return MIDI_PAD[clampMidi(midi)] ?? null;
 }
 
+/** MIDI note number to a fractional pad position for the orb burst. */
+export function midiVisualIndex(midi: number): number {
+  return Math.max(0, Math.min(9, (midi - 48) * 0.5 + 3.5));
+}
+
 export function midiNoteName(midi: number): string {
   const safe = clampMidi(midi);
   return `${MIDI_NAMES[safe % 12]}${Math.floor(safe / 12) - 1}`;

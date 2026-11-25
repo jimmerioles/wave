@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { midiNoteName, padForMidiNote, parseMidiMessage } from "./midi";
+import {
+  midiNoteName,
+  midiVisualIndex,
+  padForMidiNote,
+  parseMidiMessage,
+} from "./midi";
 
 describe("parseMidiMessage", () => {
   it("parses note-on on any channel", () => {
@@ -89,5 +94,27 @@ describe("midiNoteName", () => {
     expect(midiNoteName(127)).toBe("G9");
     expect(midiNoteName(-10)).toBe("C-1");
     expect(midiNoteName(200)).toBe("G9");
+  });
+});
+
+describe("midiVisualIndex", () => {
+  it("puts the keybed C in the middle of the arc", () => {
+    expect(midiVisualIndex(48)).toBeCloseTo(3.5);
+  });
+
+  it("moves half a step per semitone", () => {
+    expect(midiVisualIndex(49)).toBeCloseTo(4);
+    expect(midiVisualIndex(50)).toBeCloseTo(4.5);
+    expect(midiVisualIndex(54)).toBeCloseTo(6.5);
+  });
+
+  it("clamps low notes to the bottom", () => {
+    expect(midiVisualIndex(0)).toBe(0);
+    expect(midiVisualIndex(36)).toBe(0);
+  });
+
+  it("clamps high notes to the top", () => {
+    expect(midiVisualIndex(60)).toBe(9);
+    expect(midiVisualIndex(127)).toBe(9);
   });
 });

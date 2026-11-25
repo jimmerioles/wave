@@ -15,6 +15,16 @@ import {
   type ArpPattern,
   type ArpRate,
 } from "./arp";
+import { DEMO_BEATS, demoBeatMs, demoFilterAt, demoSubText } from "./demo";
+import { advanceKonami, eggPadForMidi } from "./egg";
+import {
+  extensionForMime,
+  formatBytes,
+  formatClock,
+  formatTakeDuration,
+  mimeLabel,
+  pickRecordMime,
+} from "./format";
 import {
   clearSettings,
   loadSettings,
@@ -22,7 +32,13 @@ import {
   type StoredSettings,
   type VisualMode,
 } from "./settings";
-import { MidiInput, midiNoteName, padForMidiNote, type MidiStatus } from "./midi";
+import {
+  MidiInput,
+  midiNoteName,
+  midiVisualIndex,
+  padForMidiNote,
+  type MidiStatus,
+} from "./midi";
 import { OrbScene } from "./orb";
 import {
   SONG_BASS,
@@ -109,11 +125,6 @@ const NOTE_ACCENTS = [
   "#9ef0bd",
   "#6df3cd",
 ];
-
-/** MIDI note number to the matching one-octave pad, where one exists. */
-function midiVisualIndex(midi: number): number {
-  return Math.max(0, Math.min(9, (midi - 48) * 0.5 + 3.5));
-}
 
 interface MidiNoteState {
   source: string;
@@ -708,7 +719,7 @@ function syncTempo(): void {
   tempoInput.setAttribute("aria-valuetext", `${tempo} beats per minute`);
   paintRange(tempoInput);
 
-  if (!demoPlaying && !eggPlaying) demoSub.textContent = demoSubText();
+  if (!demoPlaying && !eggPlaying) demoSub.textContent = demoSubText(tempo);
   updateArpMeta();
   persistSoon();
 }
@@ -891,51 +902,8 @@ const DEMO_NOTES: readonly DemoEvent[] = [
   [44, N.E4, 3.6, 0.36, 1.8],
 ];
 
-const DEMO_BEATS = 48;
 /** A short release keeps the arp and hook legible against the pad presets. */
 const DEMO_RELEASE = 0.38;
-
-/** [beat, cutoff slider value]: the demo rides the shared filter. */
-const DEMO_FILTER: readonly (readonly [number, number])[] = [
-  [0, 22],
-  [8, 36],
-  [24, 64],
-  [32, 72],
-  [40, 82],
-  [44, 78],
-  [48, 34],
-];
-
-function demoBeatMs(): number {
-  return 60000 / tempo;
-}
-
-function demoDurationMs(): number {
-  return DEMO_BEATS * demoBeatMs();
-}
-
-function demoSubText(): string {
-  return `Wave · First Light · ${Math.round(demoDurationMs() / 1000)}s`;
-}
-
-/** The filter value at a beat, linearly interpolated between keyframes. */
-function demoFilterAt(beat: number): number {
-  const first = DEMO_FILTER[0];
-  if (!first || beat <= first[0]) return first?.[1] ?? 22;
-
-  for (let i = 1; i < DEMO_FILTER.length; i++) {
-    const previous = DEMO_FILTER[i - 1];
-    const current = DEMO_FILTER[i];
-    if (!previous || !current) continue;
-    if (beat <= current[0]) {
-      const span = current[0] - previous[0];
-      const t = span > 0 ? (beat - previous[0]) / span : 1;
-      return previous[1] + (current[1] - previous[1]) * t;
-    }
-  }
-
-  return DEMO_FILTER[DEMO_FILTER.length - 1]?.[1] ?? 34;
-}
 
 let demoTimers: number[] = [];
 let demoPlaying = false;
@@ -1006,7 +974,7 @@ function setDemoUi(playing: boolean): void {
     playing ? "Stop the demo" : "Play First Light, the Wave demo",
   );
   demoLabel.textContent = playing ? "Stop demo" : "Play First Light";
-  demoSub.textContent = playing ? "First Light · playing" : demoSubText();
+  demoSub.textContent = playing ? "First Light · playing" : demoSubText(tempo);
   syncPlayingState();
 }
 
@@ -1015,7 +983,7 @@ function startDemo(): void {
   if (arp.enabled) setArpEnabled(false, false);
   engine.ensure();
 
-  const beatMs = demoBeatMs();
+  const beatMs = demoBeatMs(tempo);
   const totalMs = DEMO_BEATS * beatMs;
   const startMs = performance.now();
 
@@ -1118,49 +1086,6 @@ muteButton.addEventListener("click", () => {
    ------------------------------------------------------------------------- */
 
 const RECORD_LIMIT_MS = 3 * 60 * 1000;
-
-function formatClock(seconds: number): string {
-  const whole = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
-}
-
-function formatTakeDuration(seconds: number): string {
-  return formatClock(Math.max(1, Math.round(seconds)));
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${Math.round(kb)} KB`;
-  return `${(kb / 1024).toFixed(1)} MB`;
-}
-
-function pickRecordMime(): string {
-  if (typeof MediaRecorder === "undefined") return "";
-  const candidates = [
-    "audio/webm;codecs=opus",
-    "audio/webm",
-    "audio/ogg;codecs=opus",
-    "audio/mp4",
-  ];
-  for (const type of candidates) {
-    if (MediaRecorder.isTypeSupported(type)) return type;
-  }
-  return "";
-}
-
-function mimeLabel(mime: string): string {
-  if (mime.includes("mp4")) return "M4A/AAC";
-  if (mime.includes("ogg")) return "Ogg/Opus";
-  if (mime.includes("webm")) return "WebM/Opus";
-  return "Audio";
-}
-
-function extensionForMime(mime: string): string {
-  if (mime.includes("mp4")) return "m4a";
-  if (mime.includes("ogg")) return "ogg";
-  return "webm";
-}
 
 function setRecordingUi(active: boolean): void {
   recordButton.setAttribute("aria-pressed", String(active));
@@ -1530,26 +1455,6 @@ function isNoteHeldByUser(noteIndex: number): boolean {
   return false;
 }
 
-/**
- * Map an A-flat-major note to the C-major pad that mirrors it. The song spans
- * more octaves than the keybed, so pitch class picks the scale degree and the
- * top A-flat folds onto the top C. Chromatic passing notes have no pad.
- */
-const EGG_PAD_BY_PITCH_CLASS: Record<number, number> = {
-  10: 1, // B-flat
-  0: 2, // C
-  1: 3, // D-flat
-  3: 4, // E-flat
-  5: 5, // F
-  7: 6, // G
-};
-
-function eggPadForMidi(midi: number): number | null {
-  const pitchClass = ((midi % 12) + 12) % 12;
-  if (pitchClass === 8) return midi >= 68 ? 7 : 0;
-  return EGG_PAD_BY_PITCH_CLASS[pitchClass] ?? null;
-}
-
 function startEgg(): void {
   if (eggPlaying) return;
   engine.ensure();
@@ -1908,19 +1813,6 @@ const KEY_CODE_MAP: Record<string, number> = {
   KeyK: 7,
 };
 
-const KONAMI = [
-  "ArrowUp",
-  "ArrowUp",
-  "ArrowDown",
-  "ArrowDown",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowLeft",
-  "ArrowRight",
-  "KeyB",
-  "KeyA",
-] as const;
-
 let konamiIndex = 0;
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -1935,18 +1827,12 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 function trackKonami(event: KeyboardEvent): boolean {
-  if (event.code === KONAMI[konamiIndex]) {
-    konamiIndex++;
-    if (konamiIndex === KONAMI.length) {
-      konamiIndex = 0;
-      startEgg();
-      return true;
-    }
-  } else {
-    konamiIndex = event.code === KONAMI[0] ? 1 : 0;
-  }
+  const step = advanceKonami(konamiIndex, event.code);
+  konamiIndex = step.index;
+  if (!step.matched) return false;
 
-  return false;
+  startEgg();
+  return true;
 }
 
 window.addEventListener("keydown", (event) => {
