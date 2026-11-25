@@ -1,259 +1,103 @@
 # Wave: the playable synth
 
+**Eight keys, five moods, one warm little instrument.**
+
 **Live demo:** https://jimmerioles.github.io/wave/
-
-A landing page for a browser synthesizer where the hero is the instrument.
-Hold a key or tap a pad, and the orb, rings, particles and meters answer the
-sound you make. The page itself uses no video, no waveform loop, no samples.
-
-The demo button plays *First Light*, an original 12-bar cue composed for Wave:
-a quiet chord, an arpeggio, a hook, one hanging high note and a final chord, all
-scheduled through the same eight-voice instrument you play by hand.
 
 https://github.com/user-attachments/assets/30cb5368-39fc-4058-bead-1c2d86bd475a
 
-A 3:20 animated walkthrough of how Wave works. If the player
-starts muted, use the volume control to hear the narration.
+A 3:20 walkthrough. [Script and production notes](docs/explainer/).
 
-Wave is one of five prototype studies in high-craft interactive landing pages:
-static-first, one signature interaction, a physical metaphor, sound only on
-gesture, and a reduced-motion fallback.
+Wave is a browser synthesizer where the page is the instrument. Hold a key or
+tap a pad, and the orb, rings and meters answer the sound you are making,
+because they read the live audio signal rather than a loop. It is a small
+prototype for people who care about interaction design and the web platform,
+and an argument that a landing page can be the product demo.
+
+## Features
+
+- **Eight-voice synth.** Three oscillators per voice, a shared resonant filter,
+  ping-pong delay, convolution reverb, soft clip and compressor.
+- **Five presets, five motions.** Bloom, Glass, Tape, Haze and Pulse reshape the
+  sound and the stage.
+- **Arp with latch.** Up, down, up/down and random patterns at 1/4, 1/8, 1/16
+  and 1/8T, on a shared 50 to 160 BPM clock.
+- **First Light.** An original 12-bar cue played through the live voices, with a
+  filter ride that hands control back when you touch it.
+- **Record a take.** Capture the master mix with MediaRecorder and download it.
+- **MIDI input.** Note on/off and velocity from any connected device. Notes in
+  C3 to C4 light the pads.
+- **Live stage.** Orb and oscilloscope views drawn from the same analyser, with a
+  reduced-motion fallback.
+- **No samples, no backend.** Every sound is synthesized at runtime; the build is
+  static files.
 
 ## Run it
 
 ```bash
 npm install
-npm run dev
-```
-
-Open the URL Vite prints (usually `http://localhost:5173`).
-
-```bash
-npm test          # Vitest unit suite
+npm run dev       # http://localhost:5173
+npm test          # unit suite
 npm run build     # type-check + production build
-npm run preview   # serve the production build at /wave/
+npm run preview   # serve dist/ at /wave/
 ```
 
-## Play it
+The production build is static files on GitHub Pages. Vite, TypeScript and
+Vitest are dev-only.
 
-- **Hold** `A` `S` `D` `F` `G` `H` `J` `K`, or press and hold any pad. The
-  pads cover a full C-major scale from C3 to C4.
-- **Arp** turns held notes into a pattern. Choose Up, Down, Up/Down or Random,
-  set the rate to 1/4, 1/8, 1/16 or 1/8T, and use **Latch** to keep the chord
-  running after you let go. Starting a new chord replaces the latched one.
-  `Esc` stops the pattern.
-- **Tempo** sets the shared clock, 50–160 BPM; the default is 100. It drives
-  both the arp and the demo, and the demo's duration label updates before the
-  next play.
-- **Bloom / Glass / Tape / Haze / Pulse** change the oscillator mix, filter,
-  envelope, delay and reverb character, and tint the orb to match. Each preset
-  also has its own motion signature.
-- **Orb / Scope** switches the stage between the orb and a live oscilloscope.
-  The choice is saved with the rest of the settings.
-- **Drag across the pads** to glissando from note to note. Multi-touch still
-  works: each pointer can glide independently.
-- **MIDI** requests Web MIDI access from the top bar. Connected inputs play
-  through the same engine with velocity; notes in the C3–C4 range light the
-  pads, and notes outside the keybed still play. MIDI can also feed the arp.
-- **Filter** sweeps the shared low-pass cutoff. **Echo** controls how much of
-  the ping-pong delay returns. **Space** sets the shared reverb return.
-- **Play First Light** performs the original 12-bar Wave cue at the current
-  tempo: two ignition bars, four pulse bars, four lift bars, one breath and one
-  resolve. The demo rides the filter and keeps its hook on the eight pads; D4
-  and E4 add color above the keybed, with E4 saved for the opening ping and the
-  climax. `Esc` stops it early.
-- **Rec** records the master mix into a take. Click it again to stop; the take
-  dialog previews the clip and offers a download. `Esc` also stops a recording.
-- **Sound on** mutes and unmutes. The visualizer keeps reacting while muted.
-- **About** opens a short prototype note and the demo credit. The dialog also
-  has **Reset instrument**, which restores Bloom, the default filter/echo/space,
-  100 BPM, arp off and Orb view, and clears the saved settings.
+## Use it
 
-Audio starts only after the first pointer or key gesture. Nothing autoplays.
-The demo sits around -15 LUFS integrated with true peaks below -2 dBTP, close
-to Spotify and YouTube's -14 LUFS reference, and the synth shares the same
-gain staging.
+- Hold `A` `S` `D` `F` `G` `H` `J` `K`, or press and hold a pad. Drag across
+  pads to glissando; multi-touch works too.
+- **Arp** turns held or latched notes into a pattern. Pick a pattern and rate,
+  then set the shared tempo. `Esc` stops the pattern.
+- **Bloom / Glass / Tape / Haze / Pulse** change the voice and the stage.
+  **Filter**, **Echo** and **Space** shape the mix.
+- **Orb / Scope** switches the stage. **Play First Light** performs the demo at
+  the current tempo; `Esc` stops it.
+- **Rec** records the master mix. **Sound on** mutes and unmutes without
+  stopping the visuals. **About** has the reset.
+- Connect a MIDI keyboard from the top bar. Audio starts on the first pointer or
+  key gesture.
 
-## Easter egg
+There is a hidden synth-pop edit behind the wave mark. Triple-tap it, or try the
+Konami code.
 
-Triple-tap the wave mark, or enter the Konami code
-(`↑` `↑` `↓` `↓` `←` `→` `←` `→` `B` `A`). A ~1:01, 113 BPM synth-pop edit in
-the original A-flat key plays: the tom-fill intro, verse 1, pre-chorus and the
-first chorus, with a bright lead, synth bass, piano, strings, horn and drum
-machine. The demo button becomes a stop/progress control while it plays; `Esc`
-also stops it and the stage returns to the current preset. If sound is off,
-the gag is visual-only. The About dialog has a small hint.
+## How it works
 
-## What is implemented
-
-**Sound**
-- One synth voice per pad (eight playable pads), three oscillators per voice
-  (saw, triangle, sine); MIDI and demo notes reuse the same voice builder.
-- Shared resonant low-pass filter, per-note ADSR envelope, detuned layers.
-- Stereo ping-pong delay with damped feedback, soft-clip saturation and a
-  master compressor.
-- A convolution reverb with a generated stereo impulse response, shared by
-  every voice and returned through the tone filter.
-- `AnalyserNode` drives every visual response; mute is applied after the
-  analyser so the instrument stays alive visually with sound off.
-- AudioContext suspends when the page is hidden and resumes on the next
-  gesture.
-- Preset, filter, echo, space, tempo and arp settings persist in
-  `localStorage` with validation and quiet failure when storage is unavailable.
-
-**Visual instrument**
-- Canvas 2D orb with a solar core, warped bands and a pointer-following
-  highlight.
-- Live waveform ring from time-domain audio, plus circular spectrum ticks and
-  slow orbit arcs.
-- Soft springs on level, bass, treble and pointer parallax.
-- Note-on particles and expanding ripples; ambient drifting motes.
-- A full-stage oscilloscope mode with a grid, delayed trace, bright trace and
-  scanline. It uses the same analyser as the orb.
-- Per-preset motion signatures: Glass shimmers, Tape drags, Haze drifts, Pulse
-  snaps, Bloom breathes.
-- Canvas loop stops when reduced motion is requested or the stage leaves the
-  viewport. The reduced-motion scene is a calm static orb or scope with a DOM
-  level meter.
-
-**Demo**
-- “First Light,” an original 12-bar cue in C: two ignition bars, four pulse
-  bars, four lift bars, one breath and one resolve. Melody, chords, bass and a
-  scheduled arpeggio are played through the live synth.
-- The filter rides the arrangement (22% → 82% → 34%) so the stage opens and
-  closes with the cue. Touching the filter or changing a preset hands control
-  back to the player.
-- The tempo control retimes the cue before the next play; the default is
-  100 BPM. The hook stays on the eight pads (C3–C4); D4/E4 add color above the
-  keybed, with E4 saved for the opening ping and the climax.
-
-**Arp**
-- A lookahead scheduler drives the arp from `AudioContext.currentTime`, not
-  `setTimeout`, so the pattern stays steady at fast rates.
-- Four patterns (up, down, up/down, random), four rates (1/4, 1/8, 1/16,
-  1/8T), latch, and a shared 50–160 BPM tempo.
-- Held and latched pads light the current step; latched notes keep a warm
-  outline after release. The arp and demo are mutually exclusive.
-- The demo uses the same tempo clock: changing tempo before pressing play
-  retimes the whole cue.
-
-**Recording**
-- `MediaRecorder` taps the master bus before the mute gain, so a take can be
-  captured with the speakers quiet.
-- A finished take opens in a dialog with an audio preview, duration, file size,
-  format and a download link. Takes are capped at three minutes and live only
-  in the tab until discarded or replaced.
-- Downloads use the browser's preferred recording format (WebM/Opus on
-  Chromium and Firefox, M4A/AAC where that is the available option).
-
-**MIDI**
-- Web MIDI access is requested only from the top-bar button. Every connected
-  input is attached, and device add/remove updates the button state.
-- Note-on/off and velocity are mapped into the same voices. Notes in the
-  C3–C4 range light and feed the pads; other notes play through the full-range
-  MIDI voice path without a pad.
-- In-range MIDI notes are ordinary input sources, so they work with latch and
-  the arpeggiator. CC, pitch bend and clock messages are ignored.
-- If access is denied or the browser does not support Web MIDI, the button
-  reports it and the rest of the instrument keeps working.
-
-**Easter egg**
-- A hidden ~1:01 synth-pop edit of “Never Gonna Give You Up” at 113 BPM:
-  the tom-fill intro, verse 1, pre-chorus and the first chorus, with a bright
-  detuned lead, synth bass, piano, strings, horn and drum machine, all
-  synthesized at runtime from reference note data.
-- Triggered by triple-tapping the brand mark or the Konami code. The demo
-  button becomes a stop/progress control during playback; `Esc` also stops it.
-  It stops the main demo, restores the stage, respects mute and reduced motion.
-- Notes are scheduled in a rolling two-second window, and each note's audio
-  chain disconnects when it ends. During the egg the orb runs at 30fps with
-  fewer particles and no canvas shadow blur.
-
-**Page**
-- Typography: Space Grotesk + Instrument Serif accents + JetBrains Mono.
-- Deep navy field, coral sunset hero, mint/cyan signal accents.
-- Responsive composition at 1280×800 and 390×844. Mobile pads reflow to a
-  4×2 grid; the page fits without scrolling at those target sizes.
-- Keyboard-accessible pad buttons with visible focus states, `aria-pressed`,
-  a focus-trapped About dialog and native range controls.
-- Arp toggles and pattern/rate choices expose `aria-pressed`; the tempo range
-  announces its BPM value.
-- Keyboard notes stay live after clicking a button or link; they are suppressed
-  only while a text field, range control or dialog has focus.
-- Pointer events support multi-touch pads, capture, glissando and idle
-  cancellation.
-- The preset, filter, echo, space, tempo, arp and orb / scope settings persist
-  locally; invalid stored values are ignored.
-- About includes a one-click reset that clears the persisted settings and
-  restores the default instrument.
-
-## Structure
-
-```
-index.html        static shell, copy, controls
-src/style.css     layout, identity, responsive + reduced-motion styles
-src/audio.ts      Web Audio graph, presets, voices, note helpers
-src/arp.ts        lookahead arpeggiator scheduler and pattern logic
-src/midi.ts       Web MIDI access, device tracking and message parsing
-src/settings.ts   validated localStorage persistence
-src/orb.ts        Canvas 2D visualizer and particle system
-src/main.ts       input, presets, recording, demo, lifecycle
-src/*.test.ts     Vitest unit tests for the pure logic
-public/og-wave.jpg  1200x630 social preview image
-docs/explainer/   explainer film, poster and shot notes
-ARCHITECTURE.md    how the pieces fit together
-CONCEPT.md        original brief
-```
-
-There are no runtime dependencies. Vite, TypeScript and Vitest are dev-only;
-fonts come from Google Fonts, everything visual is CSS, SVG or Canvas, and
-every sound is synthesized at runtime.
+One key press wakes a voice: three detuned oscillators into a shared filter,
+delay, reverb, soft clip and compressor. An analyser taps the chain, and the
+stage draws its waveform and frequency data. The arpeggiator schedules notes
+against the audio clock, and First Light is note data played through the same
+voices. Mute sits after the analyser, so the stage keeps moving with the sound
+off. [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
 
 ## Tests
 
-```bash
-npm test          # one run
-npm run test:watch
-```
+`npm test` covers settings validation, MIDI parsing and pad mapping, arp math,
+and frequency helpers. Audio, visuals, the demo, recording and physical MIDI
+devices are manual browser checks.
 
-The unit suite covers settings validation and persistence, MIDI message parsing
-and note-to-pad mapping, arp pattern/rate math, and the cutoff/frequency
-helpers. The visualizer, audio timbre, demo timing and filter ride,
-MediaRecorder output and physical MIDI devices remain manual/browser checks;
-they are not pixel- or device-tested.
+## Limits
 
-## Roadmap
-
-All five original roadmap passes are implemented: arpeggiator + tempo,
-record & share, sound design + persistence, visual polish, and MIDI input.
-The “Rough edges” below are the honest next candidates.
-
-## Rough edges
-
-- The demo is a fixed 12-bar cue, not a full song player or sequencer. Tempo is
-  adjustable, but there is no loop length or timeline editing.
-- The keybed is one octave. The demo uses D4/E4 internally for color and the
-  climax, but those notes are not playable from the pads.
-- The arp is monophonic per step and has no swing or per-step editing yet.
-- Recording uses the browser's `MediaRecorder` container; there is no WAV
-  export or server-side sharing. Takes are session-only.
-- Browser-recorded WebM blobs do not always carry duration metadata, so the
-  preview player can show 0:00 until played; the take dialog's timer is
-  authoritative.
-- MIDI covers note-on/off and velocity only. CC, sustain pedal, pitch bend and
-  clock are ignored. Notes outside the one-octave keybed play without a pad.
-- The circular spectrum maps lower frequencies to more ticks for looks, not
-  scientific accuracy; the scope is likewise a stylized view, not a calibrated
-  measurement.
-- The synth has been built and interaction-tested headlessly; the audio graph
-  has not been tuned on every output device.
-- The About dialog is the whole "product" story. There is no downstream app,
-  pricing or docs page behind the prototype.
+- The keybed is one octave. The demo uses D4 and E4 above it, but the pads stop
+  at C4.
+- First Light is a fixed 12-bar cue, not a sequencer. Tempo is adjustable; the
+  arrangement is not.
+- The arp is monophonic per step and has no swing or per-step editing.
+- Recording is session-only MediaRecorder output, capped at three minutes, with
+  no WAV export or sharing. Some browsers omit duration metadata until playback.
+- MIDI covers note on/off and velocity. CC, pitch bend and clock are ignored.
 
 ## Credits
 
-“First Light” is an original composition for this prototype.
+First Light is an original composition for this prototype.
 
-“Never Gonna Give You Up” was performed by Rick Astley and written by Mike
-Stock, Matt Aitken and Pete Waterman. The easter egg is a short synthesized
-quote used for this prototype; all rights belong to the writers and publishers.
+The hidden easter egg is a short synthesized quote of "Never Gonna Give You Up,"
+written by Mike Stock, Matt Aitken and Pete Waterman and performed by Rick
+Astley. All rights remain with the writers and publishers.
+
+## License
+
+No license has been published for this prototype. The code and original music
+are shared for review; all rights reserved.
