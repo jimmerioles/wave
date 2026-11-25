@@ -6,8 +6,6 @@
 
 https://github.com/user-attachments/assets/30cb5368-39fc-4058-bead-1c2d86bd475a
 
-A 3:20 walkthrough. [Script and production notes](docs/explainer/).
-
 Wave is a browser synthesizer where the page is the instrument. Hold a key or
 tap a pad, and the orb, rings and meters answer the sound you are making,
 because they read the live audio signal rather than a loop. It is a small
