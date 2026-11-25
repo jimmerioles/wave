@@ -1,17 +1,18 @@
-<p align="right">
-  <a href="https://github.com/jimmerioles/wave/actions/workflows/test.yml"><img src="https://github.com/jimmerioles/wave/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
-  <a href="https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml"><img src="https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml/badge.svg" alt="Deploy to GitHub Pages"></a>
-</p>
+<div align="center">
+
+https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
 
 # Wave: the playable synth
 
 **Eight keys, five moods, one warm little instrument.**
 
+[![Tests](https://github.com/jimmerioles/wave/actions/workflows/test.yml/badge.svg)](https://github.com/jimmerioles/wave/actions/workflows/test.yml) [![Deploy to GitHub Pages](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml)
+
 **Live demo:** https://jimmerioles.github.io/wave/
 
 **Case study:** https://jimmerioles.github.io/wave/case-study.html
 
-https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
+</div>
 
 Wave is a browser synthesizer where the page is the instrument. Hold a key or
 tap a pad, and the orb, rings and meters answer the sound you are making,
