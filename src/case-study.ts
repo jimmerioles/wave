@@ -29,7 +29,8 @@ const main = document.getElementById("case-study-main");
 skipLink?.addEventListener("click", (event) => {
   if (!main) return;
   event.preventDefault();
-  main.focus();
+  main.scrollIntoView({ block: "start" });
+  main.focus({ preventScroll: true });
 });
 
 const shotTitle = document.getElementById("shot-list-title");
