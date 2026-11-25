@@ -1,9 +1,5 @@
 <div align="center">
 
-# Wave: the playable synth
-
-**Eight keys, five moods, one warm little instrument.**
-
 https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
 
 [![Tests](https://github.com/jimmerioles/wave/actions/workflows/test.yml/badge.svg)](https://github.com/jimmerioles/wave/actions/workflows/test.yml) [![Deploy to GitHub Pages](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/jimmerioles/wave/actions/workflows/deploy-pages.yml)
@@ -11,6 +7,10 @@ https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
 **Live demo:** https://jimmerioles.github.io/wave/
 
 **Case study:** https://jimmerioles.github.io/wave/case-study.html
+
+# Wave: the playable synth
+
+**Eight keys, five moods, one warm little instrument.**
 
 </div>
 
