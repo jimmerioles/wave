@@ -8,11 +8,11 @@ https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
 
 **Case study:** https://jimmerioles.github.io/wave/case-study.html
 
+</div>
+
 # Wave: the playable synth
 
 **Eight keys, five moods, one warm little instrument.**
-
-</div>
 
 Wave is a browser synthesizer where the page is the instrument. Hold a key or
 tap a pad, and the orb, rings and meters answer the sound you are making,
