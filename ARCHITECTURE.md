@@ -101,6 +101,12 @@ npm run preview  # serve the production build at /wave/
 Vite, TypeScript, and Vitest are dev tools only. The deployed output is static
 files on GitHub Pages under `/wave/`.
 
+The build also emits `case-study.html`, a separate editorial page that tells
+the story of the instrument. It has its own stylesheet and never loads the
+synth, so the app stays a single page. The story lives in `case-study.html`;
+the styles are in `src/case-study.css`, and the two small behaviours (read
+progress and shot list focus) are in `src/case-study.ts`.
+
 ## Where to look for a change
 
 - **Sound:** `PRESETS` and `createVoice()` in `src/audio.ts`

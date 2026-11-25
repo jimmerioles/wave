@@ -355,6 +355,43 @@ kbd {
   outline-offset: 2px;
 }
 
+.case-study-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.case-study-link:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.case-study-link:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+}
+
+.case-study-icon {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .about-glyph {
   display: none;
 }
@@ -2018,6 +2055,23 @@ body.is-arp .keybed-meta {
   gap: 16px;
 }
 
+.footer-link {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: var(--text);
+}
+
+.footer-link:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* -------------------------------------------------------------------------
    About dialog
    ------------------------------------------------------------------------- */
@@ -2535,6 +2589,25 @@ body.is-arp .keybed-meta {
   .about-link {
     padding: 7px 8px;
     font-size: 8px;
+  }
+
+  .case-study-link {
+    width: 31px;
+    height: 31px;
+    padding: 0;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .case-study-label {
+    display: none;
+  }
+
+  .case-study-icon {
+    width: 14px;
+    height: 14px;
   }
 
   .mute {

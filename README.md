@@ -4,6 +4,8 @@
 
 **Live demo:** https://jimmerioles.github.io/wave/
 
+**Case study:** https://jimmerioles.github.io/wave/case-study.html
+
 https://github.com/user-attachments/assets/20b9a6d3-5a69-4bb5-9805-8a9da5fef40e
 
 Wave is a browser synthesizer where the page is the instrument. Hold a key or

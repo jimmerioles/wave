@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070a15" />
+    <meta name="author" content="Jim Merioles" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23070a15'/%3E%3Crect x='20' y='26' width='4' height='14' rx='2' fill='%23ffc27a'/%3E%3Crect x='29' y='18' width='4' height='28' rx='2' fill='%23ff6a4d'/%3E%3Crect x='38' y='23' width='4' height='20' rx='2' fill='%236df3cd'/%3E%3C/svg%3E"
+    />
+    <title>Wave case study: The page is the instrument.</title>
+    <meta
+      name="description"
+      content="How Wave turns a synth landing page into the synth itself: eight voices, five presets, zero samples, and a stage drawn from the live audio signal."
+    />
+    <link rel="canonical" href="https://jimmerioles.github.io/wave/case-study.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Wave" />
+    <meta property="og:title" content="Wave case study: The page is the instrument." />
+    <meta
+      property="og:description"
+      content="Eight keys, five moods, zero samples. A case study of a landing page that is the demo."
+    />
+    <meta
+      property="og:url"
+      content="https://jimmerioles.github.io/wave/case-study.html"
+    />
+    <meta
+      property="og:image"
+      content="https://jimmerioles.github.io/wave/og-wave.jpg"
+    />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The Wave landing page: the headline Make some noise, a glowing coral orb, and the instrument controls above the Play First Light button."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Wave case study: The page is the instrument." />
+    <meta
+      name="twitter:description"
+      content="Eight keys, five moods, zero samples. A case study of a landing page that is the demo."
+    />
+    <meta
+      name="twitter:image"
+      content="https://jimmerioles.github.io/wave/og-wave.jpg"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="The Wave landing page: the headline Make some noise, a glowing coral orb, and the instrument controls above the Play First Light button."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" src="/src/case-study.ts"></script>
+  </head>
+  <body>
+    <div class="cs-backdrop" aria-hidden="true">
+      <span class="cs-glow cs-glow--coral"></span>
+      <span class="cs-glow cs-glow--cyan"></span>
+    </div>
+
+    <a
+      class="cs-skip"
+      href="#case-study-main"
+    >
+      Skip to the case study
+    </a>
+
+    <header class="cs-topbar">
+      <div class="cs-topbar__inner">
+        <a class="cs-brand" href="./" aria-label="Wave home">
+          <span class="cs-brand__mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="cs-brand__word">wave<span class="cs-brand__dot">.</span></span>
+          <span class="cs-brand__divider" aria-hidden="true"></span>
+          <span class="cs-brand__section">Case study</span>
+        </a>
+        <a class="cs-back" href="./" aria-label="Back to the instrument">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M10.5 3.5 6 8l4.5 4.5" />
+          </svg>
+          <span>Back to the instrument</span>
+        </a>
+      </div>
+      <span class="cs-progress" data-read-progress aria-hidden="true"></span>
+    </header>
+
+    <main id="case-study-main" class="cs-main" tabindex="-1">
+      <article>
+        <header class="cs-hero">
+          <div class="cs-shell">
+            <p class="cs-kicker">
+              <span class="cs-kicker__dot" aria-hidden="true"></span>
+              Web Audio · Case study
+            </p>
+            <h1 class="cs-hero__title">The page is the <em>instrument.</em></h1>
+            <p class="cs-hero__lede">
+              Wave is a browser synthesizer that doubles as its own landing
+              page. Eight keys, five moods, zero samples. Every ring, particle
+              and meter is drawn from the note you just played, because the page
+              reads the live audio signal instead of a loop. The demo is the
+              instrument.
+            </p>
+
+            <div class="cs-hero__bottom">
+              <div class="cs-actions">
+                <a class="cs-button cs-button--primary" href="./">
+                  <span>Open the instrument</span>
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6" />
+                  </svg>
+                </a>
+                <a class="cs-button cs-button--ghost" data-shot-link href="#shot-list">
+                  <span>Read the shot list</span>
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 3v9M4.5 8.5 8 12l3.5-3.5" />
+                  </svg>
+                </a>
+              </div>
+
+              <dl class="cs-facts">
+                <div>
+                  <dt>Role</dt>
+                  <dd>Product design and frontend</dd>
+                </div>
+                <div>
+                  <dt>Stack</dt>
+                  <dd>TypeScript, Vite</dd>
+                </div>
+                <div>
+                  <dt>Sound</dt>
+                  <dd>Web Audio, zero samples</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>v0.3, November 2026</dd>
+                </div>
+              </dl>
+            </div>
+
+            <figure class="cs-figure cs-figure--hero">
+              <div class="cs-figure__frame">
+                <img
+                  src="./case-study/hero.webp"
+                  alt="The Wave landing page at 1440 by 900: the headline Make some noise, the coral orb on the stage, and the console above eight keys."
+                  width="1440"
+                  height="900"
+                />
+              </div>
+              <figcaption>
+                The page at rest. Eight pads, five presets, and an orb waiting
+                for a sound.
+              </figcaption>
+            </figure>
+          </div>
+        </header>
+
+        <div class="cs-shell cs-sections">
+          <section class="cs-section" aria-labelledby="problem-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">01</span>
+              <p class="cs-kicker">The problem</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="problem-title">
+                A page about sound usually forgets to make any.
+              </h2>
+              <p class="cs-lede">
+                Instrument and audio-tool pages are demos at arm's length. A
+                video, a screenshot, a claim about latency. The visitor is asked
+                to imagine the product.
+              </p>
+              <p>The pattern is familiar:</p>
+              <ul class="cs-list">
+                <li>
+                  <strong>A video loop.</strong> Autoplay is blocked, a muted
+                  video reads like an ad, and the sound belongs to someone
+                  else's performance.
+                </li>
+                <li>
+                  <strong>A fake visualizer.</strong> The bars animate on a
+                  timer. They answer to the brand, not to audio.
+                </li>
+                <li>
+                  <strong>A screenshot gallery.</strong> Pixels show the
+                  interface and hide the feel.
+                </li>
+                <li>
+                  <strong>A spec sheet.</strong> Numbers describe the engine
+                  without letting anyone hear it.
+                </li>
+              </ul>
+              <p>
+                Wave takes the shortest route. The landing page is an actual
+                instrument. Nothing in the demo is a recording, and nothing on
+                the stage is decorative data.
+              </p>
+
+              <div class="cs-compare">
+                <h3>Before and after the demo video.</h3>
+                <p class="cs-compare__intro">
+                  A normal product page asks you to evaluate a sound you cannot
+                  make. Wave puts the engine in the tab.
+                </p>
+                <table>
+                  <caption class="sr-only">
+                    A comparison of a usual audio product page and Wave for the
+                    demo, the visual, the proof and the first sound
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Criterion</th>
+                      <th scope="col">The usual audio page</th>
+                      <th scope="col">Wave</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">The demo</th>
+                      <td data-label="The usual audio page">
+                        A video with a play button.
+                      </td>
+                      <td data-label="Wave">The page you are already on.</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">The visual</th>
+                      <td data-label="The usual audio page">
+                        Spectrum bars on a timer.
+                      </td>
+                      <td data-label="Wave">
+                        A live AnalyserNode on the master bus.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">The proof</th>
+                      <td data-label="The usual audio page">
+                        "Low latency" in the copy.
+                      </td>
+                      <td data-label="Wave">
+                        A note you can play in the same tab.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">The first sound</th>
+                      <td data-label="The usual audio page">
+                        Autoplay is blocked, so the page opens silent.
+                      </td>
+                      <td data-label="Wave">
+                        Sound starts on your first gesture, by design.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">The exit</th>
+                      <td data-label="The usual audio page">
+                        Watch, then leave.
+                      </td>
+                      <td data-label="Wave">Play, then remember.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="cs-section" aria-labelledby="what-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">02</span>
+              <p class="cs-kicker">What it is</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="what-title">
+                A landing page you can play, not a page about one.
+              </h2>
+              <p class="cs-lede">
+                Eight keys span C3 to C4. Five presets reshape the oscillators,
+                the filter, the envelope, the delay, the space and the stage's
+                way of moving. The arp turns a held chord into a pattern, First
+                Light is an original 12-bar cue, and the record button captures
+                the master mix as a take.
+              </p>
+              <p>
+                Every sound is synthesized at runtime. The page downloads no
+                audio files, loads no runtime libraries and talks to no backend.
+                The instrument is static files, Web Audio and Canvas 2D.
+              </p>
+
+              <div class="cs-statement">
+                <p>
+                  No samples. No backend. No video loop. One page that makes the
+                  sound it advertises.
+                </p>
+              </div>
+
+              <p>
+                The interface behaves like a small piece of hardware. Pads
+                depress under a pointer and hold a note when glided across.
+                Range sliders expose their values in Hz, percent and BPM. The
+                orb leans toward the pointer and settles on springs. The design
+                is dark, but the controls are not mysterious.
+              </p>
+
+              <figure class="cs-figure cs-figure--console">
+                <img
+                  src="./case-study/console.webp"
+                  alt="The Wave console: five preset buttons, filter, echo and space sliders, the Play First Light button, and the arpeggiator controls at 100 BPM."
+                  width="1884"
+                  height="282"
+                  decoding="async"
+                />
+                <figcaption>
+                  Voice, five moods, three sends and a demo button. The console
+                  shapes the sound; the keybed makes it.
+                </figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="cs-section" aria-labelledby="walkthrough-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">03</span>
+              <p class="cs-kicker">The walkthrough</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="walkthrough-title">The instrument in sixty seconds.</h2>
+              <p class="cs-lede">
+                The 3:20 explainer is finished. This is the short route through
+                the live page for a 60-second cut: six shots, no improvisation,
+                and a result on screen for every beat.
+              </p>
+
+              <div class="cs-walkthrough">
+                <div class="cs-explainer">
+                  <a
+                    class="cs-explainer__poster"
+                    href="https://github.com/jimmerioles/wave/releases/tag/explainer"
+                    aria-label="Watch the 3 minute 20 second Wave explainer on GitHub"
+                  >
+                    <img
+                      src="./case-study/explainer-poster.webp"
+                      alt="The opening frame of the Wave explainer: the live landing page with the coral orb and the Play First Light button."
+                      width="1200"
+                      height="675"
+                      decoding="async"
+                    />
+                    <span class="cs-explainer__play" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M9 6.6 17 12l-8 5.4V6.6Z" fill="currentColor" />
+                      </svg>
+                    </span>
+                  </a>
+                  <div class="cs-explainer__body">
+                    <p class="cs-explainer__meta">
+                      <span>Explainer</span>
+                      <span>3:20 · 1080p</span>
+                    </p>
+                    <h3 class="cs-explainer__title">
+                      The instrument, explained.
+                    </h3>
+                    <p class="cs-explainer__copy">
+                      One key press, the shared chain, the analyser, the clock
+                      behind the arp, and the note data behind First Light.
+                    </p>
+                    <p class="cs-explainer__status">
+                      <span class="cs-explainer__dot" aria-hidden="true"></span>
+                      Released on GitHub
+                    </p>
+                    <a
+                      class="cs-explainer__button"
+                      href="https://github.com/jimmerioles/wave/releases/tag/explainer"
+                    >
+                      Watch the explainer
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 11.5 11.5 4.5M5.5 4.5h6v6" />
+                      </svg>
+                    </a>
+                  </div>
+                  <p class="cs-explainer__note">
+                    A separate production with deterministic Canvas diagrams,
+                    Kokoro narration and an original score. The app still loads
+                    no video.
+                  </p>
+                </div>
+
+                <div class="cs-shotlist">
+                  <h3 id="shot-list-title" tabindex="-1">
+                    The 60-second shot list
+                  </h3>
+                  <ol class="cs-shots" aria-labelledby="shot-list-title">
+                    <li>
+                      <p class="cs-shots__time">0:00 to 0:06</p>
+                      <div>
+                        <h4>Open on the idle page</h4>
+                        <dl>
+                          <div>
+                            <dt>Action</dt>
+                            <dd>
+                              Load the page at 1440 × 900. Leave the instrument
+                              untouched.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>On screen</dt>
+                            <dd>
+                              The headline, the orb, the console and the eight
+                              pads. The meter reads silence.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Narration</dt>
+                            <dd>
+                              "This is Wave. Nothing is playing. Eight keys, five
+                              moods, no samples."
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                    <li>
+                      <p class="cs-shots__time">0:06 to 0:16</p>
+                      <div>
+                        <h4>Hold A, then a chord</h4>
+                        <dl>
+                          <div>
+                            <dt>Action</dt>
+                            <dd>
+                              Hold A. Add G and K. Let the orb catch up before
+                              releasing.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>On screen</dt>
+                            <dd>
+                              Three pads light, the readout names C4, the meter
+                              jumps, and the orb throws particles.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Narration</dt>
+                            <dd>
+                              "One key wakes a voice: a saw, a triangle and a
+                              sine. Hold more, and the page draws them."
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                    <li>
+                      <p class="cs-shots__time">0:16 to 0:26</p>
+                      <div>
+                        <h4>Change the mood</h4>
+                        <dl>
+                          <div>
+                            <dt>Action</dt>
+                            <dd>
+                              Play a note under Glass, then Tape, then Haze.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>On screen</dt>
+                            <dd>
+                              The palette, rings, ticks and motion change with
+                              the preset. The filter and sends move with them.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Narration</dt>
+                            <dd>
+                              "Five presets, five ways of moving. Glass
+                              shimmers. Tape drags. Haze drifts."
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                    <li>
+                      <p class="cs-shots__time">0:26 to 0:36</p>
+                      <div>
+                        <h4>Let the arp run</h4>
+                        <dl>
+                          <div>
+                            <dt>Action</dt>
+                            <dd>
+                              Hold a chord, turn the arp on, press Latch, then
+                              step through Up/Down and 1/16.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>On screen</dt>
+                            <dd>
+                              Pads flash in step, the readout follows the pattern
+                              and the tempo stays steady.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Narration</dt>
+                            <dd>
+                              "The arp looks 120 milliseconds ahead and schedules
+                              notes on the audio clock."
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                    <li>
+                      <p class="cs-shots__time">0:36 to 0:48</p>
+                      <div>
+                        <h4>Play First Light</h4>
+                        <dl>
+                          <div>
+                            <dt>Action</dt>
+                            <dd>
+                              Press Play First Light. Let the cue build through
+                              the opening chord and the arpeggio.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>On screen</dt>
+                            <dd>
+                              Pads play the arrangement, the filter opens as the
+                              cue builds, and the readout follows the melody.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Narration</dt>
+                            <dd>
+                              "First Light is note data, not a recording. It
+                              plays through the same voices as my hands."
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                    <li>
+                      <p class="cs-shots__time">0:48 to 1:00</p>
+                      <div>
+                        <h4>Record a take</h4>
+                        <dl>
+                          <div>
+                            <dt>Action</dt>
+                            <dd>
+                              Press Rec, play four notes, then stop. The take
+                              dialog opens on its own.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>On screen</dt>
+                            <dd>
+                              The record pill counts time. The take dialog
+                              appears with a player, a duration, a size and a
+                              download.
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Narration</dt>
+                            <dd>
+                              "Record the master mix, open the take, keep the
+                              file. No account, no upload."
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                  </ol>
+
+                  <figure class="cs-figure cs-figure--walkthrough">
+                    <img
+                      src="./case-study/first-light.webp"
+                      alt="Wave during First Light: the orb ringed by spectrum ticks, A3 in the voice readout, active pads and a filter at 2.6 kHz."
+                      width="1440"
+                      height="800"
+                      decoding="async"
+                    />
+                    <figcaption>
+                      First Light in the lift. The cue rides the shared filter,
+                      and every note goes through the same voices as a keypress.
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cs-section" aria-labelledby="how-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">04</span>
+              <p class="cs-kicker">How it works</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="how-title">Six ideas hold the whole instrument up.</h2>
+              <p class="cs-lede">
+                The instrument is small on purpose. One voice design, one effect
+                chain, one analyser, one canvas. No scene graph, no audio files,
+                and no second copy of the sound.
+              </p>
+
+              <ol class="cs-steps">
+                <li>
+                  <span class="cs-steps__number" aria-hidden="true">01</span>
+                  <div>
+                    <h3>A voice is three oscillators and an envelope.</h3>
+                    <p>
+                      Press A and <code>createVoice()</code> builds a saw, a
+                      triangle and a sine. The saw and triangle detune in
+                      opposite directions; the sine sits an octave down. A short
+                      attack and decay fall to the preset's sustain, then the
+                      release stretches when you let go. Eight voices can run at
+                      once.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span class="cs-steps__number" aria-hidden="true">02</span>
+                  <div>
+                    <h3>Every voice shares one chain.</h3>
+                    <p>
+                      The dry signal joins a bus, a resonant low-pass, a 45 Hz
+                      high-pass, a soft clipper and a compressor. A ping-pong
+                      delay and a 2.6-second convolution reverb are sends. Both
+                      returns pass back through the same filter, so the filter
+                      darkens the tail as well as the note.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span class="cs-steps__number" aria-hidden="true">03</span>
+                  <div>
+                    <h3>Mute lives after the analyser.</h3>
+                    <p>
+                      The analyser taps the chain before the master and the
+                      mute. Turn the sound off and the speakers go quiet, but the
+                      orb and the meters keep drawing the signal. The visualizer
+                      never performs a loop, even when the room is silent.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span class="cs-steps__number" aria-hidden="true">04</span>
+                  <div>
+                    <h3>The arp trusts the audio clock.</h3>
+                    <p>
+                      A 28 ms timer looks 120 ms ahead and schedules notes
+                      against <code>AudioContext.currentTime</code>. Pad flashes
+                      are cosmetic and use <code>setTimeout</code>; the notes
+                      themselves do not depend on the page clock. Patterns are
+                      up, down, up/down and random, at 1/4, 1/8, 1/16 and 1/8T.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span class="cs-steps__number" aria-hidden="true">05</span>
+                  <div>
+                    <h3>First Light is data, not a recording.</h3>
+                    <p>
+                      The cue is 48 beats of note events: start, note, length,
+                      velocity and release. It plays through the same voices as
+                      your hands, rides the filter with keyframes, and hands the
+                      filter back the moment you touch it. The arrangement is
+                      fixed; the tempo is yours.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span class="cs-steps__number" aria-hidden="true">06</span>
+                  <div>
+                    <h3>The stage is a mirror.</h3>
+                    <p>
+                      A 2048-point analyser feeds the orb, the ring, the spectrum
+                      ticks and the output meter. Springs smooth level, bass and
+                      treble so motion has weight. Each preset carries its own
+                      palette and motion, and reduced motion stops the loop
+                      without stopping the instrument.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+
+              <div class="cs-code-grid">
+                <div class="cs-code">
+                  <p class="cs-code__label">The chain</p>
+                  <pre
+                    role="img"
+                    aria-label="The shared signal chain: voice to bus, low-pass filter, high-pass rumble filter, soft clipper, compressor, analyser, master, mute and speakers. Delay and reverb sends return through the shared filter."
+                  ><code>voice
+  → bus
+  → low-pass filter
+  → high-pass rumble filter
+  → soft clipper
+  → compressor
+  → analyser  →  meter + orb
+  → master
+  → mute
+  → speakers
+
+delay send   ─┐
+reverb send  ─┴→ return to the filter</code></pre>
+                </div>
+                <div class="cs-code">
+                  <p class="cs-code__label">The cue, as data</p>
+                  <pre><code>// [beat, note, length, velocity, release]
+[0,  A3, 7.4, 0.46, 0.9]  // ignition
+[24, F3, 2.2, 0.48, 0.5]  // lift
+[44, C3, 4.0, 0.50, 1.8]  // resolve</code></pre>
+                </div>
+              </div>
+
+              <figure class="cs-figure cs-figure--scope">
+                <img
+                  src="./case-study/scope.webp"
+                  alt="Scope view with sound muted: a live waveform crosses the stage while the output meter still moves and the mute pill reads Muted."
+                  width="1440"
+                  height="900"
+                  decoding="async"
+                />
+                <figcaption>
+                  Sound off, signal on. The scope keeps drawing because the
+                  analyser sits before the mute.
+                </figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="cs-section" aria-labelledby="performance-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">05</span>
+              <p class="cs-kicker">Performance</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="performance-title">
+                Nothing is decoded. Everything is drawn.
+              </h2>
+              <p class="cs-lede">
+                The page ships no audio files, so there is no decode step and no
+                buffer to wait for. Sound is built from oscillators. Pixels are
+                built from an analyser buffer.
+              </p>
+
+              <dl class="cs-stats">
+                <div>
+                  <dt>Full polyphony</dt>
+                  <dd>
+                    <strong>24</strong>
+                    <span>eight voices, three oscillators each</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Audio files</dt>
+                  <dd>
+                    <strong>0</strong>
+                    <span>every sound synthesized at runtime</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Arp lookahead</dt>
+                  <dd>
+                    <strong>120 ms</strong>
+                    <span>scheduled on the audio clock</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Scheduler tick</dt>
+                  <dd>
+                    <strong>28 ms</strong>
+                    <span>sixteen steps per pass, at most</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Stage</dt>
+                  <dd>
+                    <strong>60 fps</strong>
+                    <span>30 fps for the low-power easter egg</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>First Light</dt>
+                  <dd>
+                    <strong>29 s</strong>
+                    <span>12 bars at the shared tempo</span>
+                  </dd>
+                </div>
+              </dl>
+
+              <p>
+                The canvas stops when it leaves the viewport and when the tab is
+                hidden. The easter egg halves the frame cap and schedules its
+                music two seconds ahead, so a one-minute arrangement never
+                creates every oscillator at once. The recorder takes 250 ms
+                chunks and stops itself at three minutes.
+              </p>
+              <p>
+                The audio context asks for interactive latency, and the page
+                waits for a gesture before it starts. These are design budgets
+                and constants from the build, not a published benchmark. Frame
+                pacing and audio latency still depend on the machine, the
+                browser and the audio interface. A public trace is on the next
+                list.
+              </p>
+            </div>
+          </section>
+
+          <section
+            class="cs-section"
+            aria-labelledby="accessibility-title"
+          >
+            <div class="cs-section__aside">
+              <span class="cs-section__number">06</span>
+              <p class="cs-kicker">Accessibility</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="accessibility-title">
+                Playable by keyboard. Readable by a screen reader. Honest about
+                sound.
+              </h2>
+              <p class="cs-lede">
+                The instrument is built from real controls. The canvas is the
+                face, not the interface.
+              </p>
+
+              <ul class="cs-list cs-list--tight cs-access-list">
+                <li>
+                  <strong>The pads are buttons.</strong> Each pad is a
+                  <code>&lt;button&gt;</code> with a name such as "Play C3 with
+                  the A key" and an <code>aria-pressed</code> state. Space and
+                  Enter play notes, and a release on blur prevents a stuck
+                  voice.
+                </li>
+                <li>
+                  <strong>The keys keep their keys.</strong> Letter shortcuts do
+                  not fire while a text field or slider has focus. Range inputs
+                  keep their arrow keys and expose values as Hz, percent and
+                  BPM.
+                </li>
+                <li>
+                  <strong>Toggles announce state.</strong> Presets, arp, latch,
+                  mute, record and Orb/Scope use <code>aria-pressed</code>; the
+                  visible label changes along with the sound.
+                </li>
+                <li>
+                  <strong>Dialogs are native.</strong> About and Take are
+                  <code>&lt;dialog&gt;</code> elements with Escape, focus
+                  containment and a backdrop click to close.
+                </li>
+                <li>
+                  <strong>Motion is optional.</strong> With reduced motion, the
+                  canvas stops its loop, draws a static scene and samples the
+                  meter every 150 ms. The synth still plays, and the state still
+                  updates.
+                </li>
+                <li>
+                  <strong>Silence is a feature.</strong> Mute sits after the
+                  analyser, so the instrument can be used in a quiet room
+                  without losing the visual response.
+                </li>
+                <li>
+                  <strong>This page follows the same rules.</strong> One
+                  heading, semantic landmarks, a skip link, visible focus, table
+                  captions and alt text. No meaning depends on color alone.
+                </li>
+              </ul>
+
+              <figure class="cs-figure cs-figure--keybed">
+                <img
+                  src="./case-study/keybed.webp"
+                  alt="The eight Wave pads, labelled C3 to C4 with keys A to K, under the line Hold a key. Shape the wave."
+                  width="1328"
+                  height="126"
+                  decoding="async"
+                />
+                <figcaption>
+                  Eight real buttons, one octave. Each pad names its note, its
+                  key and its status to assistive tech.
+                </figcaption>
+              </figure>
+
+              <p>
+                The honest limit: the instrument is auditory. The visualizer is
+                <code>aria-hidden</code>, and there is no text or haptic
+                equivalent for pitch. A screen reader can operate every control
+                and read every state, but it cannot hear the result for the
+                user. That belongs in the limitations, not in a claim.
+              </p>
+            </div>
+          </section>
+
+          <section class="cs-section" aria-labelledby="limitations-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">07</span>
+              <p class="cs-kicker">Limitations</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="limitations-title">What this does not claim.</h2>
+              <p class="cs-lede">
+                A prototype is more useful when it names its edges.
+              </p>
+
+              <div class="cs-cols">
+                <ul class="cs-list cs-list--tight">
+                  <li>
+                    The keybed is one octave, C3 to C4. First Light uses D4 and
+                    E4 above it; the pads stop at C4.
+                  </li>
+                  <li>
+                    The arp is monophonic per step. There is no swing, no
+                    per-step gate and no 1/32 rate.
+                  </li>
+                  <li>
+                    First Light is a fixed 12-bar cue. Tempo changes; the
+                    arrangement does not.
+                  </li>
+                  <li>
+                    Recording is session-only MediaRecorder output, capped at
+                    three minutes. There is no WAV export and no sharing. Some
+                    browsers omit duration metadata until playback.
+                  </li>
+                  <li>
+                    MIDI covers note on, note off and velocity. CC, pitch bend
+                    and clock are ignored.
+                  </li>
+                  <li>
+                    Audio needs a user gesture and Web Audio support. The page
+                    is silent until that gesture, by design.
+                  </li>
+                  <li>
+                    The visualizer is an enhancement and is hidden from assistive
+                    tech. The instrument is auditory; there is no text or haptic
+                    equivalent for pitch.
+                  </li>
+                  <li>
+                    Frame pacing and latency depend on the device. There is no
+                    published benchmark yet.
+                  </li>
+                  <li>
+                    The easter egg is a short synthesized quote of a copyrighted
+                    song, credited in About and the README. It is an egg, not a
+                    feature.
+                  </li>
+                </ul>
+
+                <figure class="cs-figure cs-figure--mobile">
+                  <img
+                    src="./case-study/mobile.webp"
+                    alt="The Wave page at 390 by 844: the headline, the orb, the stacked console and the eight pads in four columns."
+                    width="390"
+                    height="844"
+                      decoding="async"
+                  />
+                  <figcaption>
+                    The instrument at 390 × 844. The keybed becomes four
+                    columns, the console stacks, and the stage stays live.
+                  </figcaption>
+                </figure>
+              </div>
+            </div>
+          </section>
+
+          <section class="cs-section" aria-labelledby="next-title">
+            <div class="cs-section__aside">
+              <span class="cs-section__number">08</span>
+              <p class="cs-kicker">What is next</p>
+            </div>
+            <div class="cs-section__body">
+              <h2 id="next-title">
+                The next version should make the instrument more playable, not
+                bigger.
+              </h2>
+              <p class="cs-lede">
+                The demo has proved the argument. The remaining work is
+                evidence, reach and range.
+              </p>
+
+              <ol class="cs-next">
+                <li>
+                  <span aria-hidden="true">01</span>
+                  <div>
+                    <h3>Publish a frame and latency trace.</h3>
+                    <p>
+                      Measure pan, animation and input latency on a mid-range
+                      laptop and a phone, then put the numbers beside the
+                      budgets.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span aria-hidden="true">02</span>
+                  <div>
+                    <h3>Add a second octave.</h3>
+                    <p>
+                      An octave shift or a 16-pad mode, without losing the
+                      one-octave clarity.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span aria-hidden="true">03</span>
+                  <div>
+                    <h3>Give the arp a feel.</h3>
+                    <p>
+                      Swing, per-step gates and a 1/32 rate. The clock is already
+                      sample-accurate; the pattern needs a human lean.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span aria-hidden="true">04</span>
+                  <div>
+                    <h3>Export a take as WAV.</h3>
+                    <p>
+                      Render offline for a lossless file, then add a share link
+                      so a take can leave the tab.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span aria-hidden="true">05</span>
+                  <div>
+                    <h3>Teach MIDI more.</h3>
+                    <p>
+                      Map CC to filter, echo and space. Accept clock and pitch
+                      bend.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span aria-hidden="true">06</span>
+                  <div>
+                    <h3>Cut a 60-second explainer.</h3>
+                    <p>
+                      Use the shot list above, then put the short cut at the top
+                      of the README.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span aria-hidden="true">07</span>
+                  <div>
+                    <h3>Build a second instrument.</h3>
+                    <p>
+                      Reuse the engine and the stage to prove the pattern is a
+                      product, not a one-off.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </section>
+        </div>
+      </article>
+    </main>
+
+    <footer class="cs-footer">
+      <div class="cs-shell cs-footer__inner">
+        <div>
+          <p class="cs-footer__mark">
+            wave<span class="cs-footer__dot">.</span>
+          </p>
+          <p class="cs-footer__note">
+            Prototype 01. A demo, not a product. Built with TypeScript, Canvas
+            2D and the Web Audio API. No samples, no runtime libraries, no
+            backend.
+          </p>
+        </div>
+        <div class="cs-footer__links">
+          <a class="cs-back" href="./">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M10.5 3.5 6 8l4.5 4.5" />
+            </svg>
+            <span>Back to the instrument</span>
+          </a>
+          <a class="cs-small" data-shot-link href="#shot-list">Read the shot list</a>
+          <a class="cs-small" href="https://github.com/jimmerioles/wave">
+            Source on GitHub
+          </a>
+          <a
+            class="cs-small"
+            href="https://github.com/jimmerioles/wave/releases/tag/explainer"
+          >
+            Watch the explainer
+          </a>
+          <p class="cs-footer__credit">Built by Jim Merioles · November 2026</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
